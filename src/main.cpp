@@ -2,49 +2,13 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
 
-static unsigned int CompileShader(unsigned int type, const std::string& source)
-{
-    unsigned int id = glCreateShader(type);
-    const char* src = source.c_str();
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
 
-    int result;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-    if (result == GL_FALSE)
-    {
-        int length;
-        glGetShaderiv(id,GL_INFO_LOG_LENGTH, &length);
-        char* message = (char*)alloca(sizeof(char)* length);
-        glGetShaderInfoLog(id, length, &length, message);
-        std::cout << "ERROR: " << (type == GL_VERTEX_SHADER ? "Vertex" : "Fragment") << " shader failed to compile" << std::endl;
-        std::cout << message << std::endl;
-        glDeleteShader(id);
-
-        return 0;
-    }
-
-    return id;
-}
-
-static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
-{
-    unsigned int program = glCreateProgram();
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-
-    glAttachShader(program,vs);
-    glAttachShader(program,fs);
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    return program;
-}
+#include "Renderer.cpp"
+#include "VertexBuffer.cpp"
+#include "IndexBuffer.cpp"
+#include "VertexArray.cpp"
+#include "Shader.cpp"
 
 int main(void)
 {
@@ -65,47 +29,58 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    glfwSwapInterval(1);
+
     if(glewInit() != GLEW_OK)
         return -1;
 
     //Program Start
-
-    float positions[6] = {
+    {
+    float positions[] = {
         -0.5f, -0.5f,
-         0.0f,  0.5f,
          0.5f, -0.5f,
+         0.5f,  0.5f,
+        -0.5f,  0.5f,
+    };
+
+    unsigned int indices[] = {
+        0,1,2,
+        2,3,0,
     };
     
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 6*sizeof(float), positions, GL_STATIC_DRAW);
+    VertexArray va;
+    VertexBuffer vb(positions, 4*2*sizeof(float));
+    VertexBufferLayout layout;
+    layout.Push<float>(2);
+    va.AddBuffer(vb, layout);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float)*2, 0);
+    IndexBuffer ib(indices, 6);
 
-    std::string vertexShader =
-    "#version 330 core\n"
-    "\n"
-    "layout(location = 0) in vec4 position;\n"
-    "\n"
-    "void main(){gl_Position = position;}";
-    std::string fragmentShader =
-    "#version 330 core\n"
-    "\n"
-    "layout(location = 0) out vec4 color;\n"
-    "\n"
-    "void main(){color = vec4(1.0, 0.0, 0.0, 1.0);}";
-    unsigned int shader = CreateShader(vertexShader, fragmentShader);
-    glUseProgram(shader);
+    Shader shader("res/shaders/basicShaders.glsl");
+    shader.Bind();
+    shader.SetUnisform4f("u_Color",0.0f, 0.0f, 0.0f, 1.0f);
+
+    Renderer renderer;
+
+    float r = 0.0f;
+    float increament = 0.05f;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderer.Clear();
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        shader.SetUnisform4f("u_Color",r, 0.0f, 0.0f, 1.0f);
+        
+        renderer.Draw(va,ib,shader);
+
+        if (r > 1.0f)
+            increament = -0.05f;
+        else if (r < 0.0f)
+            increament = 0.05f;
+
+        r += increament;
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -113,9 +88,7 @@ int main(void)
         /* Poll for and process events */
         glfwPollEvents();
     }
-
-    glDeleteProgram(shader);
-
+    }   
     glfwTerminate();
     return 0;
 }
