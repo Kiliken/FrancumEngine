@@ -1,18 +1,12 @@
-
-#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <iostream>
+#include "loadShader.h"
 
-
-#include "Renderer.cpp"
-#include "VertexBuffer.cpp"
-#include "IndexBuffer.cpp"
-#include "VertexArray.cpp"
-#include "Shader.cpp"
 
 int main(void)
 {
-    GLFWwindow* window;
+    GLFWwindow *window;
 
     /* Initialize the library */
     if (!glfwInit())
@@ -29,58 +23,54 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
-    glfwSwapInterval(1);
+    if (glewInit() == GLEW_OK)
+        std::cout << glGetString(GL_VERSION) << std::endl;
 
-    if(glewInit() != GLEW_OK)
-        return -1;
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
 
-    //Program Start
-    {
-    float positions[] = {
-        -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f,  0.5f,
-        -0.5f,  0.5f,
+    static const GLfloat g_vertex_buffer_data[] = {
+        -1.0f,-1.0f,0.0f,
+        1.0f,-1.0f,0.0f,
+        0.0f,1.0f,0.0f,
     };
 
-    unsigned int indices[] = {
-        0,1,2,
-        2,3,0,
-    };
-    
-    VertexArray va;
-    VertexBuffer vb(positions, 4*2*sizeof(float));
-    VertexBufferLayout layout;
-    layout.Push<float>(2);
-    va.AddBuffer(vb, layout);
+    // This will identify our vertex buffer
+    GLuint vertexbuffer;
+    // Generate 1 buffer, put the resulting identifier in vertexbuffer
+    glGenBuffers(1, &vertexbuffer);
+    // The following commands will talk about our 'vertexbuffer' buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    // Give our vertices to OpenGL.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
-    IndexBuffer ib(indices, 6);
-
-    Shader shader("res/shaders/basicShaders.glsl");
-    shader.Bind();
-    shader.SetUnisform4f("u_Color",0.0f, 0.0f, 0.0f, 1.0f);
-
-    Renderer renderer;
-
-    float r = 0.0f;
-    float increament = 0.05f;
+    // Create and compile our GLSL program from the shaders
+    GLuint programID = LoadShaders( "../res/shaders/SimpleVertexShader.vert", "../res/shaders/SimpleFragmentShader.frag" );
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        renderer.Clear();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.SetUnisform4f("u_Color",r, 0.0f, 0.0f, 1.0f);
-        
-        renderer.Draw(va,ib,shader);
+        // 1st attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+            0,        // attribute 0. No particular reason for 0, but must match the layout in the shader.
+            3,        // size
+            GL_FLOAT, // type
+            GL_FALSE, // normalized?
+            0,        // stride
+            (void *)0 // array buffer offset
+        );
 
-        if (r > 1.0f)
-            increament = -0.05f;
-        else if (r < 0.0f)
-            increament = 0.05f;
+        glUseProgram(programID);
 
-        r += increament;
+        // Draw the triangle !
+        glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+        glDisableVertexAttribArray(0);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -88,7 +78,7 @@ int main(void)
         /* Poll for and process events */
         glfwPollEvents();
     }
-    }   
+
     glfwTerminate();
     return 0;
 }

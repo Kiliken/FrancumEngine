@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Windows Launch",
-            "program": "${workspaceRoot}/main.exe",
+            "program": "${workspaceRoot}/build/Main.exe",
             "type": "cppvsdbg",
             "request": "launch",
             "cwd": "${workspaceFolder}"

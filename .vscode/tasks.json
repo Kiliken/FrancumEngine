@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "Windows Build",
-            "command": "${workspaceFolder}/build.bat",
+            "command": "${workspaceFolder}/BuildGame.bat",
             "group": {
                 "kind": "build",
                 "isDefault": true
