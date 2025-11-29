@@ -1,6 +1,6 @@
 @echo off
 
-if exist "%appdata%/w64devkit/bin" set PATH=%appdata%/w64devkit/bin;%PATH%
+if exist "%localappdata%/w64devkit/bin" set PATH=%localappdata%/w64devkit/bin;%PATH%
 
 
 SET includes=-I%cd%\src -I%cd%\dep\include

@@ -1,7 +1,7 @@
 @echo off
 
 if exist "%cd%/dep" goto ExitProgram
-if not exist "%appdata%/w64devkit" goto InstallGcc
+if not exist "%localappdata%/w64devkit" goto InstallGcc
 
 
 :SetupProject
