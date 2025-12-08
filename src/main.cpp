@@ -34,10 +34,19 @@ int main(void)
     if (glewInit() == GLEW_OK)
         std::cout << glGetString(GL_VERSION) << std::endl;
 
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
 
+    // Dark blue background
+	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// Accept fragment if it is closer to the camera than the former one
+	glDepthFunc(GL_LESS); 
+
+    GLuint VertexArrayID;
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
+    
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -97,7 +106,7 @@ int main(void)
         glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
         glVertexAttribPointer(
             1,        // attribute. No particular reason for 1, but must match the layout in the shader.
-            3,        // size
+            2,        // size
             GL_FLOAT, // type
             GL_FALSE, // normalized?
             0,        // stride
@@ -112,6 +121,7 @@ int main(void)
         // Draw the triangle !
         glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -119,6 +129,12 @@ int main(void)
         /* Poll for and process events */
         glfwPollEvents();
     }
+
+    glDeleteBuffers(1, &vertexbuffer);
+	glDeleteBuffers(1, &colorbuffer);
+	glDeleteProgram(programID);
+	glDeleteTextures(1, &Texture);
+	glDeleteVertexArrays(1, &VertexArrayID);
 
     glfwTerminate();
     return 0;

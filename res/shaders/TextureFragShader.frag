@@ -10,7 +10,10 @@ out vec3 color;
 uniform sampler2D myTextureSampler;
 
 void main(){
-    
+
+    // Fix UVs form DDS(DirectX) standard to GL
+    vec2 fixedUV = vec2(UV.x, 1.0 - UV.y);
+
     // Output color = color of the texture at the specified UV
-    color = texture( myTextureSampler, UV ).rgb;
+    color = texture( myTextureSampler, fixedUV ).rgb;
 }
