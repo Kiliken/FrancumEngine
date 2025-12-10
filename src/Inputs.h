@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 class Inputs
 {
 private:
@@ -27,8 +26,7 @@ private:
     float initialFoV = 45.0f;
 
     float speed = 3.0f;
-    float mouseSpeed = 0.03f;
-
+    float mouseSpeed = 0.05f;
 
 public:
     Inputs(GLFWwindow *mainWindow);
@@ -49,6 +47,7 @@ Inputs::Inputs(GLFWwindow *mainWindow)
 {
     win = mainWindow;
     glfwGetWindowSize(win, &winWidth, &winHeight);
+    glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
 }
 
 Inputs::~Inputs()
@@ -57,6 +56,10 @@ Inputs::~Inputs()
 
 void Inputs::Update(float dt)
 {
+    // Get mouse position
+    glfwGetCursorPos(win, &xpos, &ypos);
+    // Reset mouse position
+    glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
 
     horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
     verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
@@ -77,12 +80,6 @@ void Inputs::Update(float dt)
     up = glm::cross(right, direction);
 
     {
-        // Get mouse position
-        glfwGetCursorPos(win, &xpos, &ypos);
-        // Reset mouse position
-        glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
-
-
         // Move forward
         if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
         {
@@ -109,4 +106,3 @@ void Inputs::Update(float dt)
         }
     }
 }
-

@@ -5,9 +5,9 @@
 #include <iostream>
 #include "loadShader.h"
 #include "loadDDS.h"
+#include "loadOBJ.h"
 #include "Inputs.h"
 
-#include "cubeBuffers.h"
 
 int main(void)
 {
@@ -18,13 +18,13 @@ int main(void)
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(1280, 720, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "OpenGL", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
         return -1;
     }
-    
+
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
@@ -41,11 +41,17 @@ int main(void)
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
     // Enable depth test
-    //glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     // Accept fragment if it is closer to the camera than the former one
     glDepthFunc(GL_LESS);
-    
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+    // Read our .obj file
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals; // Won't be used at the moment.
+    bool res = loadOBJ("../res/cube.obj", vertices, uvs, normals);
 
     // GL Stuffs
     GLuint VertexArrayID;
@@ -55,12 +61,12 @@ int main(void)
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-    GLuint colorbuffer;
-    glGenBuffers(1, &colorbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_uv_buffer_data), g_uv_buffer_data, GL_STATIC_DRAW);
+    GLuint uvsbuffer;
+    glGenBuffers(1, &uvsbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
+    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec3), &uvs[0], GL_STATIC_DRAW);
 
     GLuint Texture = loadDDS("../res/uvtemplate.dds");
 
@@ -103,9 +109,9 @@ int main(void)
         Projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
         // Camera matrix
         View = glm::lookAt(
-            inputs.position,             // Camera is here
+            inputs.position,                    // Camera is here
             inputs.position + inputs.direction, // and looks here : at the same position, plus "direction"
-            inputs.up                    // Head is up (set to 0,-1,0 to look upside-down)
+            inputs.up                           // Head is up (set to 0,-1,0 to look upside-down)
         );
 
         mvp = Projection * View * Model;
@@ -126,7 +132,7 @@ int main(void)
         );
 
         glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
         glVertexAttribPointer(
             1,        // attribute. No particular reason for 1, but must match the layout in the shader.
             2,        // size
@@ -154,11 +160,10 @@ int main(void)
     }
 
     glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &colorbuffer);
+    glDeleteBuffers(1, &uvsbuffer);
     glDeleteProgram(programID);
     glDeleteTextures(1, &Texture);
     glDeleteVertexArrays(1, &VertexArrayID);
-
 
     glfwTerminate();
     return 0;
