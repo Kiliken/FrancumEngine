@@ -8,7 +8,6 @@
 #include "loadOBJ.h"
 #include "Inputs.h"
 
-
 int main(void)
 {
     GLFWwindow *window;
@@ -68,6 +67,11 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
     glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec3), &uvs[0], GL_STATIC_DRAW);
 
+    GLuint normalbuffer;
+    glGenBuffers(1, &normalbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+
     GLuint Texture = loadDDS("../res/uvtemplate.dds");
 
     // Camera Projections
@@ -90,10 +94,13 @@ int main(void)
     glm::mat4 mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
     // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("../res/shaders/TextureVertShader.vert", "../res/shaders/TextureFragShader.frag");
+    GLuint programID = LoadShaders("../res/shaders/StandardShadingShader.vert", "../res/shaders/StandardShadingShader.frag");
 
-    // Get a handle for our "MVP" uniform
+    // Get a handle for our uniforms
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+    GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
+    GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
+    GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
     float lastTime = 0.0f;
     /* Loop until the user closes the window */
@@ -142,8 +149,24 @@ int main(void)
             (void *)0 // array buffer offset
         );
 
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+        glVertexAttribPointer(
+            2,        // attribute
+            3,        // size
+            GL_FLOAT, // type
+            GL_FALSE, // normalized?
+            0,        // stride
+            (void *)0 // array buffer offset
+        );
+
         // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &Model[0][0]);
+		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &View[0][0]);
+
+        glm::vec3 lightPos = glm::vec3(4,4,4);
+		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
         glUseProgram(programID);
 
@@ -161,6 +184,7 @@ int main(void)
 
     glDeleteBuffers(1, &vertexbuffer);
     glDeleteBuffers(1, &uvsbuffer);
+    glDeleteBuffers(1, &normalbuffer);
     glDeleteProgram(programID);
     glDeleteTextures(1, &Texture);
     glDeleteVertexArrays(1, &VertexArrayID);
