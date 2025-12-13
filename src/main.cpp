@@ -7,6 +7,7 @@
 #include "loadDDS.h"
 #include "loadOBJ.h"
 #include "Inputs.h"
+#include "vboIndexer.h"
 
 int main(void)
 {
@@ -49,10 +50,26 @@ int main(void)
     // Read our .obj file
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> uvs;
-    std::vector<glm::vec3> normals; // Won't be used at the moment.
+    std::vector<glm::vec3> normals; 
+    std::vector<unsigned short> indices;
     bool res = loadOBJ("../res/cube.obj", vertices, uvs, normals);
 
+    // fill "indices" as needed
+    std::vector<glm::vec3> idxVertices;
+    std::vector<glm::vec2> idxUvs;
+    std::vector<glm::vec3> idxNormals; 
+    indexVBO(vertices,uvs,normals,indices,idxVertices,idxUvs,idxNormals);
+    
+
+
     // GL Stuffs
+
+    // Generate a buffer for the indices
+    GLuint elementbuffer;
+    glGenBuffers(1, &elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -60,17 +77,17 @@ int main(void)
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, idxVertices.size() * sizeof(glm::vec3), &idxVertices[0], GL_STATIC_DRAW);
 
     GLuint uvsbuffer;
     glGenBuffers(1, &uvsbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec3), &uvs[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, idxUvs.size() * sizeof(glm::vec3), &idxUvs[0], GL_STATIC_DRAW);
 
     GLuint normalbuffer;
     glGenBuffers(1, &normalbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, idxNormals.size() * sizeof(glm::vec3), &idxNormals[0], GL_STATIC_DRAW);
 
     GLuint Texture = loadDDS("../res/uvtemplate.dds");
 
@@ -162,18 +179,26 @@ int main(void)
 
         // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
-		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &Model[0][0]);
-		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &View[0][0]);
+        glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &Model[0][0]);
+        glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &View[0][0]);
 
-        glm::vec3 lightPos = glm::vec3(4,4,4);
-		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+        glm::vec3 lightPos = glm::vec3(4, 4, 4);
+        glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
         glUseProgram(programID);
 
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
+        // Draw the triangles !
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+        glDrawElements(
+            GL_TRIANGLES,    // mode
+            indices.size(),  // count
+            GL_UNSIGNED_SHORT, // type
+            (void *)0        // element array buffer offset
+        );
+
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
