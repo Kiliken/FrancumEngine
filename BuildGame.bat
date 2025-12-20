@@ -13,7 +13,16 @@ SET defines=-DRELEASE
 if not exist "%cd%/build" md build
 
 
-g++ -o "%cd%\build\App.exe" %includes% %defines% "%cd%\src\*.cpp" %links% 
+g++ -o "%cd%\build\App.exe" %includes% %defines% ^
+ "%cd%\src\*.cpp" ^
+ "%cd%\dep\include\imgui\imgui.cpp" ^
+ "%cd%\dep\include\imgui\imgui_draw.cpp" ^
+ "%cd%\dep\include\imgui\imgui_tables.cpp" ^
+ "%cd%\dep\include\imgui\imgui_widgets.cpp" ^
+ "%cd%\dep\include\imgui\imgui_demo.cpp" ^
+ "%cd%\dep\include\imgui\imgui_impl_glfw.cpp" ^
+ "%cd%\dep\include\imgui\imgui_impl_opengl3.cpp" ^
+ %links%
 
 
 if %errorlevel% neq 0 (

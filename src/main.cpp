@@ -2,7 +2,11 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 #include "loadShader.h"
 #include "loadDDS.h"
 #include "loadOBJ.h"
@@ -18,7 +22,8 @@ int main(void)
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(1280, 720, "OpenGL", NULL, NULL);
+    float ImGuiMainScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
+    window = glfwCreateWindow((int)(1280 * ImGuiMainScale), (int)(800 * ImGuiMainScale), "OpenGL", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -27,6 +32,28 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+    ImGui::StyleColorsDark();
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(ImGuiMainScale); // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
+    style.FontScaleDpi = ImGuiMainScale; // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
+    //UI Variables
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    glm::vec3 lightPos = glm::vec3(0, 0, 4);
+
 
     // Initialize Inputs
     Inputs inputs(window);
@@ -38,13 +65,15 @@ int main(void)
         std::cout << glGetString(GL_VERSION) << std::endl;
 
     // Dark blue background
-    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 
     // Enable depth test
-    // glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
     // Accept fragment if it is closer to the camera than the former one
     glDepthFunc(GL_LESS);
+
+    glEnable(GL_CULL_FACE);
+
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // Read our .obj file
@@ -148,14 +177,47 @@ int main(void)
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
     float lastTime = 0.0f;
+
+    
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
-    {
+    {   
+        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+
         double currentTime = glfwGetTime();
         float deltaTime = float(currentTime - lastTime);
         lastTime = currentTime;
 
         inputs.Update(deltaTime);
+        
+        if (inputs.showUI)
+        {
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+        }
+        
+        
+
+        if (inputs.showUI)
+        {
+            
+            static int counter = 0;
+
+            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+            ImGui::InputFloat3("Position", glm::value_ptr(lightPos));
+
+            //ImGui::SliderFloat("float", nullptr, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a colorwd
+
+
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            ImGui::End();
+        }
+
 
         // Projection matrix : 45&deg; Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
         Projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
@@ -165,6 +227,7 @@ int main(void)
             inputs.position + inputs.direction, // and looks here : at the same position, plus "direction"
             inputs.up                           // Head is up (set to 0,-1,0 to look upside-down)
         );
+
 
         mv = View * Model;
         mv33 = glm::mat3(mv);
@@ -239,7 +302,6 @@ int main(void)
         glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &View[0][0]);
         glUniformMatrix3fv(ModelView3x3MatrixID, 1, GL_FALSE, &mv33[0][0]);
 
-        glm::vec3 lightPos = glm::vec3(0, 0, 4);
         glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
         // Bind our diffuse texture in Texture Unit 0
@@ -272,6 +334,13 @@ int main(void)
         glDisableVertexAttribArray(3);
         glDisableVertexAttribArray(4);
 
+        if (inputs.showUI)
+        {
+            // Rendering
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+        
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
@@ -291,6 +360,11 @@ int main(void)
     glDeleteTextures(1, &SpecularTexture);
     glDeleteVertexArrays(1, &VertexArrayID);
     glDeleteProgram(programID);
+
+    // ImGui Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;

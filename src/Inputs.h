@@ -28,6 +28,8 @@ private:
     float speed = 3.0f;
     float mouseSpeed = 0.05f;
 
+    bool tabWasDown;
+
 public:
     Inputs(GLFWwindow *mainWindow);
     ~Inputs();
@@ -38,6 +40,8 @@ public:
 
     // position
     glm::vec3 position = glm::vec3(0, 0, 5);
+
+    bool showUI = false;
 
     // field of view
     float FoV;
@@ -56,11 +60,14 @@ Inputs::~Inputs()
 
 void Inputs::Update(float dt)
 {
-    // Get mouse position
-    glfwGetCursorPos(win, &xpos, &ypos);
-    // Reset mouse position
-    glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
-
+    if(!showUI)
+    {
+        // Get mouse position
+        glfwGetCursorPos(win, &xpos, &ypos);
+        // Reset mouse position
+        glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
+    }
+    
     horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
     verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
 
@@ -80,6 +87,8 @@ void Inputs::Update(float dt)
     up = glm::cross(right, direction);
 
     {
+        int tabState = glfwGetKey(win, GLFW_KEY_TAB);
+
         // Move forward
         if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
         {
@@ -100,9 +109,17 @@ void Inputs::Update(float dt)
         {
             position -= right * dt * speed;
         }
+        if(tabState == GLFW_PRESS && !tabWasDown)
+        {
+            showUI = !showUI;
+            glfwSetInputMode(win, GLFW_CURSOR, (showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN));
+            glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
+        }
         if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(win, GLFW_TRUE);
         }
+        
+        tabWasDown = (tabState == GLFW_PRESS);
     }
 }
