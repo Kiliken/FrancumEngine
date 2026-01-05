@@ -42,6 +42,7 @@
 
 # Project Specific
 *.zip
+*tar.gz
 /[Dd]ep/
 /[Bb]uild/
 !/[Rr]es/[Ee]mbed/*.o

@@ -4,6 +4,7 @@
       "name": "Win64-MSVC",
       "includePath": [
         "${workspaceFolder}/dep/include",
+        "${env:LOCALAPPDATA}/lua-5.3.4/src",
         "${workspaceFolder}/src",
         "${workspaceFolder}"
       ],

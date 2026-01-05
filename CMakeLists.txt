@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add Defines
-add_compile_definitions(RELEASE)
+add_compile_definitions(
+    RELEASE
+)
+
 
 
 # Check File to Embed
@@ -30,18 +33,21 @@ add_executable(App
 	# ImGui backends
 	dep/include/imgui/imgui_impl_glfw.cpp
     dep/include/imgui/imgui_impl_opengl3.cpp
+	
 )
 
 # Include Directories
 target_include_directories(App PRIVATE 
     src 
     dep/include
+	"$ENV{LOCALAPPDATA}/lua-5.3.4/src"
 )
 
 # Link Directories
 target_link_directories(App PRIVATE 
     src 
     dep/lib
+	"$ENV{LOCALAPPDATA}/lua-5.3.4/src"
 )
 
 # Link Libraries
@@ -59,6 +65,7 @@ target_link_libraries(App PRIVATE
 	odbccp32
 	glfw3dll
 	glew32
+	lua
 )
 
 
