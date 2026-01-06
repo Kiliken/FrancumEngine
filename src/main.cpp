@@ -16,6 +16,8 @@
 #include "Inputs.h"
 #include "vboIndexer.h"
 #include "Object.h"
+#include "ScriptComponent.h"
+
 
 
 int main(void)
@@ -60,6 +62,23 @@ int main(void)
     glm::vec3 lightPos = glm::vec3(0, 0, 4);
     glm::vec3 cubePos, cubeRot, cubeScale = glm::vec3(1, 1, 1);
 
+    
+    // Initiate Lua Scripting
+    sol::state lua;
+    lua.open_libraries(sol::lib::base, sol::lib::package);
+    BindFunctions(lua);
+    lua.script("print('[Sol3] Lua Scripting Loaded')");
+
+    // Load Scripts
+    std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
+    {
+        auto files = GetScriptsInFolder("../res/scripts/");
+        for (auto &file : files)
+        {
+            loadedScripts.push_back(std::make_unique<ScriptComponent>(lua, file));
+        }
+    }
+
     // Initialize Inputs
     Inputs inputs(window);
 
@@ -84,7 +103,7 @@ int main(void)
     // Camera Projections
     glm::mat4 Projection;
     if (true) // perspective
-        Projection = glm::perspective(glm::radians(45.0f), (float)winWidth / (float)winHeight, 0.1f, 100.0f);
+        Projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
     else // orthographic
         Projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.0f, 100.0f);
 
@@ -98,10 +117,23 @@ int main(void)
     // Create and compile our GLSL program from the shaders
     GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
 
-    Object cube(CUBE_MODEL, &programID, &View, Projection, &lightPos);
-    Object cube2("../res/cube.obj", &programID, &View, Projection, &lightPos);
+
+    {
+        DefaultObjectConfig.fileName = CUBE_MODEL;
+        DefaultObjectConfig.prog = &programID;
+        DefaultObjectConfig.View = &View;
+        DefaultObjectConfig.camera = &Projection;
+        DefaultObjectConfig.lightPos = &lightPos;
+    }
+
+
+    Object cube(CUBE_MODEL);
 
     float lastTime = 0.0f;
+
+    // LuaScript Start
+    for (auto &script : loadedScripts)
+        script->Start();
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -148,8 +180,8 @@ int main(void)
         cube.Rotation(cubeRot);
         cube.Scale(cubeScale);
 
-        // Projection matrix : 45&deg; Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-        Projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+        
+        
         // Camera matrix
         View = glm::lookAt(
             inputs.position,                    // Camera is here
@@ -158,13 +190,19 @@ int main(void)
         );
 
         cube.Update(deltaTime);
-        cube2.Update(deltaTime);
+
+        // LuaScript Update
+        for (auto &script : loadedScripts)
+            script->Update(deltaTime);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         cube.Draw();
-        cube2.Draw();
+
+        // LuaScript Draw
+        for (auto &script : loadedScripts)
+            script->Draw();
 
         if (inputs.showUI)
         {

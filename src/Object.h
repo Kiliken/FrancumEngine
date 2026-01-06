@@ -20,25 +20,38 @@ extern const unsigned char _binary_cube_obj_end[];
 size_t cubeSize = _binary_cube_obj_end - _binary_cube_obj_start;
 
 std::string cubeData(
-    (const char*)_binary_cube_obj_start,
-    cubeSize
-);
+    (const char *)_binary_cube_obj_start,
+    cubeSize);
 
+struct ObjectConfig
+{
+    const char *fileName;
+    GLuint *prog;
+    glm::mat4 *View;
+    glm::mat4 *camera;
+    glm::vec3 *lightPos;
+};
+
+ObjectConfig DefaultObjectConfig;
 
 class Object
 {
 
 public:
-    Object(const char* fileName, GLuint* prog, glm::mat4* View, glm::mat4& camera, glm::vec3* lightPos);
+    Object(const char *fileName, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos);
+    Object(const ObjectConfig &cfg);
+    Object(const char *fileName);
+    Object();
+
     ~Object();
 
     void Update(float deltaTime);
     void Draw();
 
-    void Transform(const glm::mat4& transform);
-    void Position(const glm::vec3& position);
-    void Rotation(const glm::vec3& rotation);
-    void Scale(const glm::vec3& scale);
+    void Transform(const glm::mat4 &transform);
+    void Position(const glm::vec3 &position);
+    void Rotation(const glm::vec3 &rotation);
+    void Scale(const glm::vec3 &scale);
 
 private:
     // Render
@@ -48,7 +61,6 @@ private:
     std::vector<glm::vec3> tangents;
     std::vector<glm::vec3> bitangents;
     std::vector<unsigned short> indices;
-
 
     GLuint elementbuffer;
     GLuint vertexbuffer;
@@ -71,44 +83,43 @@ private:
     GLuint SpecularTexture;
 
     // Transform
-    glm::mat4 projection;
+    glm::mat4 *projection;
     glm::mat4 mvp;
 
     glm::mat4 mv;
     glm::mat3 mv33;
 
     glm::mat4 Model;
-    glm::vec3 localPos, localRot, localScale = {1,1,1};
+    glm::vec3 localPos;
+    glm::vec3 localRot;
+    glm::vec3 localScale;
 
     // External
-    GLuint* shaders;
+    GLuint *shaders;
 
-
-    glm::mat4* view;
-    glm::vec3* lightPos;
-
+    glm::mat4 *view;
+    glm::vec3 *lightPos;
 };
 
-Object::Object(const char* fileName, GLuint* prog, glm::mat4* View, glm::mat4& camera, glm::vec3* LightPos)
+Object::Object(const char *fileName, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
+    : shaders(prog), view(View), projection(camera), lightPos(lightPos)
 {
+
     std::vector<glm::vec3> tempVertices;
     std::vector<glm::vec2> tempUvs;
     std::vector<glm::vec3> tempNormals;
     std::vector<glm::vec3> tempTangents;
-    std::vector<glm::vec3> tempBitangents; 
+    std::vector<glm::vec3> tempBitangents;
 
-    if(fileName == CUBE_MODEL){
+    if (fileName == CUBE_MODEL)
+    {
         loadOBJ(cubeData, tempVertices, tempUvs, tempNormals);
     }
-    else loadOBJ(fileName, tempVertices, tempUvs, tempNormals);
+    else
+        loadOBJ(fileName, tempVertices, tempUvs, tempNormals);
 
     computeTangentBasis(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents);
-    indexVBO_TBN(tempVertices,tempUvs,tempNormals,tempTangents, tempBitangents,indices, vertices,uvs,normals, tangents, bitangents);
-
-    shaders = prog;
-    projection = camera;
-    view = View;
-    lightPos = LightPos;
+    indexVBO_TBN(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents, indices, vertices, uvs, normals, tangents, bitangents);
 
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
@@ -148,29 +159,44 @@ Object::Object(const char* fileName, GLuint* prog, glm::mat4* View, glm::mat4& c
     light = glGetUniformLocation(*shaders, "LightPosition_worldspace");
 
     Model = glm::mat4(1.0f);
+    localPos = glm::vec3(0.0f);
+    localRot = glm::vec3(0.0f);
+    localScale = glm::vec3(1.0f);
 }
+
+Object::Object(const ObjectConfig &cfg)
+    : Object(cfg.fileName, cfg.prog, cfg.View, cfg.camera, cfg.lightPos) {}
+
+Object::Object(const char *fileName)
+    : Object(fileName, DefaultObjectConfig.prog, DefaultObjectConfig.View, DefaultObjectConfig.camera, DefaultObjectConfig.lightPos) {}
+
+Object::Object()
+    : Object(DefaultObjectConfig) {}
+
+
+
+
+
 
 void Object::Update(float deltaTime)
 {
 
     Model = glm::mat4(1.0f);
     Model = glm::translate(Model, localPos);
-    Model = glm::rotate(Model, localRot.x, {1,0,0});
-    Model = glm::rotate(Model, localRot.y, {0,1,0});
-    Model = glm::rotate(Model, localRot.z, {0,0,1});
+    Model = glm::rotate(Model, localRot.x, {1, 0, 0});
+    Model = glm::rotate(Model, localRot.y, {0, 1, 0});
+    Model = glm::rotate(Model, localRot.z, {0, 0, 1});
     Model = glm::scale(Model, localScale);
-
 
     mv = *view * Model;
     mv33 = glm::mat3(mv);
-    mvp = projection * *view * Model;
+    mvp = *projection * *view * Model;
 }
 
 void Object::Draw()
 {
     glUseProgram(*shaders);
 
-    
     // 1st attribute buffer : vertices
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -228,7 +254,6 @@ void Object::Draw()
         (void *)0 // array buffer offset
     );
 
-
     // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &Model[0][0]);
@@ -283,18 +308,22 @@ Object::~Object()
 }
 
 // Transform Stuff
-void Object::Transform(const glm::mat4& transform){
+void Object::Transform(const glm::mat4 &transform)
+{
     Model = transform;
 }
 
-void Object::Position(const glm::vec3& position){
+void Object::Position(const glm::vec3 &position)
+{
     localPos = position;
 }
 
-void Object::Rotation(const glm::vec3& rotation){
+void Object::Rotation(const glm::vec3 &rotation)
+{
     localRot = glm::radians(rotation);
 }
 
-void Object::Scale(const glm::vec3& scale){
+void Object::Scale(const glm::vec3 &scale)
+{
     localScale = scale;
 }
