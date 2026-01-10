@@ -30,7 +30,7 @@ int main(void)
 
     /* Create a windowed mode window and its OpenGL context */
     float ImGuiMainScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
-    window = glfwCreateWindow((int)(1280 * ImGuiMainScale), (int)(800 * ImGuiMainScale), "OpenGL", NULL, NULL);
+    window = glfwCreateWindow((int)(1280 * ImGuiMainScale), (int)(800 * ImGuiMainScale), "FrancumEngine", NULL, NULL);
     if (!window)
     {
         glfwTerminate();

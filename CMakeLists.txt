@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(AppProject)
+project(FrancumEngine)
 
 # Set C++ Standard
 set(CMAKE_CXX_STANDARD 17)
@@ -18,7 +18,7 @@ file(GLOB RESOURCE_OBJECTS CONFIGURE_DEPENDS
 )
 
 # Executable Files
-add_executable(App
+add_executable(Francum
 
 	# Main
     src/main.cpp
@@ -34,24 +34,26 @@ add_executable(App
 	dep/include/imgui/imgui_impl_glfw.cpp
     dep/include/imgui/imgui_impl_opengl3.cpp
 	
+	build/resources.rc
+	
 )
 
 # Include Directories
-target_include_directories(App PRIVATE 
+target_include_directories(Francum PRIVATE 
     src 
     dep/include
 	"$ENV{LOCALAPPDATA}/lua-5.3.4/src"
 )
 
 # Link Directories
-target_link_directories(App PRIVATE 
+target_link_directories(Francum PRIVATE 
     src 
     dep/lib
 	"$ENV{LOCALAPPDATA}/lua-5.3.4/src"
 )
 
 # Link Libraries
-target_link_libraries(App PRIVATE 
+target_link_libraries(Francum PRIVATE 
     opengl32
 	user32
 	shell32
@@ -70,7 +72,7 @@ target_link_libraries(App PRIVATE
 
 
 # Embedding objects
-target_sources(App PRIVATE
+target_sources(Francum PRIVATE
     ${RESOURCE_OBJECTS}
 )
 

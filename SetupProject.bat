@@ -9,7 +9,7 @@ if exist "%cd%/dep" goto ExitProgram
 
 
 :SetupProject
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup/InstallOpenGL.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup/InstallEngine.ps1"
 echo Project Setup completed...
 pause
 exit

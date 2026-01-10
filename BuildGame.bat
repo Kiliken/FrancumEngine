@@ -20,5 +20,5 @@ if %errorlevel% neq 0 (
 		color 0a
 		echo Build succeeded. Launching game...
 		cd build
-		App.exe
+		Francum.exe
 )

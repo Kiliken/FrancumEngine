@@ -2,11 +2,8 @@
 $luaDownloadUrl = "https://www.lua.org/ftp/lua-5.3.4.tar.gz"
 
 # Download Lua
-$wc = New-Object Net.WebClient
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-
 Write-Output "[CMakeInstall] Downloading lua-5.3.4 ..."
-$wc.DownloadFile($luaDownloadUrl, "$($PSScriptRoot)\lua.tar.gz")
+curl.exe -L "$luaDownloadUrl" -o "$($PSScriptRoot)\lua.tar.gz" --progress-bar
 
 # Extract Lua
 Write-Output "[CMakeInstall] Extracting lua-5.3.4 in $($env:LOCALAPPDATA)..."

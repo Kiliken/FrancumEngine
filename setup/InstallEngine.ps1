@@ -60,7 +60,9 @@ Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_glfw.cpp"
 Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_glfw.h" -Destination "$($ProjectRoot)\dep\include\imgui"
 
 # Lua Dependencies Fix
-(Get-Content -Path "$($ProjectRoot)\dep\include\sol\sol.hpp") -replace 'this->construct(std::forward<Args>(args)...);', 'this->emplace(std::forward<Args>(args)...);' | Set-Content -Path "$($ProjectRoot)\dep\include\sol\sol.hpp"
+(Get-Content "$ProjectRoot\dep\include\sol\sol.hpp") `
+    -replace 'this->construct\(std::forward<Args>\(args\)\.\.\.\);', 'this->emplace(std::forward<Args>(args)...);' |
+    Set-Content "$ProjectRoot\dep\include\sol\sol.hpp"
 
 
 Copy-Item -Path "$($PSScriptRoot)\GenerateLibs.bat" -Destination "$($PSScriptRoot)\glew-2.2.0\bin\Release\x64" -Force
@@ -69,6 +71,9 @@ Push-Location "$($PSScriptRoot)\glew-2.2.0\bin\Release\x64"
 Pop-Location
 
 
+# Setup Resources
+Copy-Item -Path "$($PSScriptRoot)\resources.rc" -Destination "$($ProjectRoot)\build" -Force
+Copy-Item -Path "$($PSScriptRoot)\icon.ico" -Destination "$($ProjectRoot)\build" -Force
 
 
 # Clean Dependencies

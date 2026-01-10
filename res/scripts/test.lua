@@ -19,6 +19,7 @@ function OnUpdate(dt)
     local amplitude = 1.0      -- how high it moves
     local speed = 2.0          -- how fast it moves
     local offsetY = math.sin(time * speed) * amplitude
+	local suzanneRotY = math.sin(time * speed) * 180
 
     -- rotation
     rotationY = rotationY + 1.5
@@ -26,6 +27,7 @@ function OnUpdate(dt)
     -- apply transforms
     cube:SetPosition(0, offsetY, 0)
     cube:SetRotation(0, rotationY, 0)
+	suzanne:SetRotation(0,suzanneRotY,0)
 
     cube:Update(dt)
 	suzanne:Update(dt)
