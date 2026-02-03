@@ -9,7 +9,7 @@ curl.exe -L "$luaDownloadUrl" -o "$($PSScriptRoot)\lua.tar.gz" --progress-bar
 Write-Output "[CMakeInstall] Extracting lua-5.3.4 in $($env:LOCALAPPDATA)..."
 tar -xzf "$($PSScriptRoot)\lua.tar.gz" -C "$($env:LOCALAPPDATA)"
 
-Remove-Item -Path "$($PSScriptRoot)\lua.zip" -Force
+Remove-Item -Path "$($PSScriptRoot)\lua.tar.gz" -Force
 
 # Build Lua
 $env:PATH = "$env:LOCALAPPDATA\w64devkit\bin;$env:PATH"
