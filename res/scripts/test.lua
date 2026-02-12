@@ -2,6 +2,8 @@ cube = nil
 rotationY = 0
 time = 0
 
+cubePosX = 0
+
 function OnStart()
     print("Script started!")
     cube = Object.new("../res/cube.obj")
@@ -9,6 +11,10 @@ function OnStart()
 	
 	suzanne:SetPosition(-3,0,0)
 	suzanne:SetRotation(0,35,0)
+
+    print("Engine =", FEngine)	
+    print("Inputs =", FEngine.Inputs)
+	print("IsKeyDown =", FEngine.Inputs.IsKeyDown)
 end
 
 function OnUpdate(dt)
@@ -24,10 +30,21 @@ function OnUpdate(dt)
     -- rotation
     rotationY = rotationY + 1.5
 
+    
+    if FEngine.Inputs:IsKeyDown(INPUT_KEY_LEFT) then
+		cubePosX = cubePosX + 1
+	end
+
+    if FEngine.Inputs:IsKeyDown(INPUT_KEY_RIGHT) then
+		cubePosX = cubePosX - 1
+	end
+
     -- apply transforms
-    cube:SetPosition(0, offsetY, 0)
+    cube:SetPosition(cubePosX, offsetY, 0)
     cube:SetRotation(0, rotationY, 0)
 	suzanne:SetRotation(0,suzanneRotY,0)
+
+    
 
     cube:Update(dt)
 	suzanne:Update(dt)

@@ -14,6 +14,7 @@
 #include "loadDDS.h"
 #include "loadOBJ.h"
 #include "Inputs.h"
+#include "Camera.h"
 #include "vboIndexer.h"
 #include "Object.h"
 #include "ScriptComponent.h"
@@ -58,6 +59,7 @@ int main(void)
     ImGui_ImplOpenGL3_Init("#version 130");
 
     // UI Variables
+    bool fastReload = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     glm::vec3 lightPos = glm::vec3(0, 0, 4);
     glm::vec3 cubePos, cubeRot = glm::vec3(1, 1, 1);
@@ -68,7 +70,17 @@ int main(void)
     sol::state lua;
     lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os);
     BindFunctions(lua);
+    SetupConstants(lua);
+    lua["FEngine"] = lua.create_table();
     lua.script("print('[Sol3] Lua Scripting Loaded')");
+
+
+    // Initialize Camera
+    Camera camera(window);
+
+    // Initialize Inputs
+    Inputs inputs(window);
+    lua["FEngine"]["Inputs"] = &inputs;
 
     // Load Scripts
     std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
@@ -79,9 +91,7 @@ int main(void)
             loadedScripts.push_back(std::make_unique<ScriptComponent>(lua, file));
         }
     }
-
-    // Initialize Inputs
-    Inputs inputs(window);
+    
 
     int winWidth, winHeight;
     glfwGetWindowSize(window, &winWidth, &winHeight);
@@ -145,9 +155,9 @@ int main(void)
         float deltaTime = float(currentTime - lastTime);
         lastTime = currentTime;
 
-        inputs.Update(deltaTime);
+        camera.Update(deltaTime);
 
-        if (inputs.showUI)
+        if (camera.showUI)
         {
             // Start the Dear ImGui frame
             ImGui_ImplOpenGL3_NewFrame();
@@ -155,13 +165,23 @@ int main(void)
             ImGui::NewFrame();
         }
 
-        if (inputs.showUI)
+        if (camera.showUI)
         {
 
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
 
+            // Standard Window
+            ImGui::Begin("Francum Engine");
+            
+            
+            
+            if(ImGui::Button("Reload")){
+                fastReload = true;
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
+            
+            
             ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
             ImGui::InputFloat3("Position", glm::value_ptr(lightPos));
 
@@ -189,9 +209,9 @@ int main(void)
         
         // Camera matrix
         View = glm::lookAt(
-            inputs.position,                    // Camera is here
-            inputs.position + inputs.direction, // and looks here : at the same position, plus "direction"
-            inputs.up                           // Head is up (set to 0,-1,0 to look upside-down)
+            camera.position,                    // Camera is here
+            camera.position + camera.direction, // and looks here : at the same position, plus "direction"
+            camera.up                           // Head is up (set to 0,-1,0 to look upside-down)
         );
 
         cube.Update(deltaTime);
@@ -209,7 +229,7 @@ int main(void)
         for (auto &script : loadedScripts)
             script->Draw();
 
-        if (inputs.showUI)
+        if (camera.showUI)
         {
             // Rendering
             ImGui::Render();
@@ -231,5 +251,10 @@ int main(void)
     ImGui::DestroyContext();
 
     glfwTerminate();
+
+    if(fastReload){
+        std::system("start \"\" Francum.exe");
+    }
+
     return 0;
 }
