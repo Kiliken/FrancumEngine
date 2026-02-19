@@ -86,7 +86,10 @@ void BindFunctions(sol::state &lua)
                              "Draw", &Object::Draw,
                              "SetPosition", &Object::SetPosition,
                              "SetRotation", &Object::SetRotation,
-                             "SetScale", &Object::SetScale);
+                             "SetScale", &Object::SetScale,
+                             "SetTexture", &Object::SetTexture,
+                             "SetNormalMap", &Object::SetNormalMap,
+                             "SetSpecularMap", &Object::SetSpecularMap);
 
     lua.new_usertype<Inputs>("Inputs", "IsKeyDown", &Inputs::IsKeyDown);
 }

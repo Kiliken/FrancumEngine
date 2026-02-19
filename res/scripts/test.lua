@@ -6,11 +6,24 @@ cubePosX = 0
 
 function OnStart()
     print("Script started!")
+	
+	-- Initialize objects
     cube = Object.new("../res/cube.obj")
 	suzanne = Object.new("../res/suzanne.obj")
+	house = Object.new("../res/house.obj")
+	
+	-- Cube Texture Setup
+	cube:SetTexture("../res/diffuse.dds")
+	cube:SetNormalMap("../res/normals.dds")
+	cube:SetSpecularMap("../res/specular.dds")
+	
+	house:SetTexture("../res/house.dds")
 	
 	suzanne:SetPosition(-3,0,0)
 	suzanne:SetRotation(0,35,0)
+	
+	house:SetPosition(-10,0,0)
+	house:SetRotation(0,65,0)
 
     print("Engine =", FEngine)	
     print("Inputs =", FEngine.Inputs)
@@ -45,12 +58,13 @@ function OnUpdate(dt)
 	suzanne:SetRotation(0,suzanneRotY,0)
 
     
-
     cube:Update(dt)
 	suzanne:Update(dt)
+	house:Update(dt)
 end
 
 function OnDraw()
     cube:Draw()
 	suzanne:Draw()
+	house:Draw()
 end

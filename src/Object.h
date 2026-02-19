@@ -52,6 +52,11 @@ public:
     void SetPosition(const float& x, const float& y, const float& z);
     void SetRotation(const float& x, const float& y, const float& z);
     void SetScale(const float& x, const float& y, const float& z);
+    
+    void SetTexture(const char *path);
+    void SetNormalMap(const char *path);
+    void SetSpecularMap(const char *path);
+
 
 private:
     // Render
@@ -156,7 +161,7 @@ Object::Object(const char *fileName, GLuint *prog, glm::mat4 *View, glm::mat4 *c
     viewId = glGetUniformLocation(*shaders, "V");
     ModelMatrixID = glGetUniformLocation(*shaders, "M");
     ModelView3x3MatrixID = glGetUniformLocation(*shaders, "MV3x3");
-    light = glGetUniformLocation(*shaders, "LightPosition_worldspace");
+    light = glGetUniformLocation(*shaders, "LightDirection_worldspace");
 
     Model = glm::mat4(1.0f);
     localPos = glm::vec3(0.0f);
@@ -326,4 +331,19 @@ void Object::SetRotation(const float& x, const float& y, const float& z)
 void Object::SetScale(const float& x, const float& y, const float& z)
 {
     localScale = glm::vec3(x,y,z);
+}
+
+void Object::SetTexture(const char *path)
+{
+    DiffuseTexture = loadDDS(path);
+}
+
+void Object::SetNormalMap(const char *path)
+{
+    NormalTexture = loadDDS(path);
+}
+
+void Object::SetSpecularMap(const char *path)
+{
+    SpecularTexture = loadDDS(path);
 }

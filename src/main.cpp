@@ -61,7 +61,7 @@ int main(void)
     // UI Variables
     bool fastReload = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    glm::vec3 lightPos = glm::vec3(0, 0, 4);
+    glm::vec3 lightPos = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
     glm::vec3 cubePos, cubeRot = glm::vec3(1, 1, 1);
     float cubeScale = 1.f;
 
@@ -183,7 +183,7 @@ int main(void)
             
             
             ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
-            ImGui::InputFloat3("Position", glm::value_ptr(lightPos));
+            ImGui::InputFloat3("Light Direction", glm::value_ptr(lightPos));
 
             // ImGui::SliderFloat("float", nullptr, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a colorwd
