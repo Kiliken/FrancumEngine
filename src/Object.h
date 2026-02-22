@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <GL/glew.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -67,6 +67,7 @@ private:
     std::vector<glm::vec3> bitangents;
     std::vector<unsigned short> indices;
 
+    GLuint vao;
     GLuint elementbuffer;
     GLuint vertexbuffer;
     GLuint uvsbuffer;
@@ -126,29 +127,42 @@ Object::Object(const char *fileName, GLuint *prog, glm::mat4 *View, glm::mat4 *c
     computeTangentBasis(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents);
     indexVBO_TBN(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents, indices, vertices, uvs, normals, tangents, bitangents);
 
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
 
     glGenBuffers(1, &uvsbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec3), &uvs[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(1);
 
     glGenBuffers(1, &normalbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(2);
 
     glGenBuffers(1, &tangentbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
     glBufferData(GL_ARRAY_BUFFER, tangents.size() * sizeof(glm::vec3), &tangents[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(3);
 
     glGenBuffers(1, &bitangentbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, bitangentbuffer);
     glBufferData(GL_ARRAY_BUFFER, bitangents.size() * sizeof(glm::vec3), &bitangents[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(4);
+
+    glGenBuffers(1, &elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
 
     DiffuseTexture = loadDDS("../res/baseDiffuse.dds");
     NormalTexture = loadDDS("../res/baseNormals.dds");
@@ -202,62 +216,7 @@ void Object::Draw()
 {
     glUseProgram(*shaders);
 
-    // 1st attribute buffer : vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-        0,        // attribute 0. No particular reason for 0, but must match the layout in the shader.
-        3,        // size
-        GL_FLOAT, // type
-        GL_FALSE, // normalized?
-        0,        // stride
-        (void *)0 // array buffer offset
-    );
-
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
-    glVertexAttribPointer(
-        1,        // attribute. No particular reason for 1, but must match the layout in the shader.
-        2,        // size
-        GL_FLOAT, // type
-        GL_FALSE, // normalized?
-        0,        // stride
-        (void *)0 // array buffer offset
-    );
-
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-    glVertexAttribPointer(
-        2,        // attribute
-        3,        // size
-        GL_FLOAT, // type
-        GL_FALSE, // normalized?
-        0,        // stride
-        (void *)0 // array buffer offset
-    );
-
-    glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
-    glVertexAttribPointer(
-        3,        // attribute
-        3,        // size
-        GL_FLOAT, // type
-        GL_FALSE, // normalized?
-        0,        // stride
-        (void *)0 // array buffer offset
-    );
-
-    // 5th attribute buffer : bitangents
-    glEnableVertexAttribArray(4);
-    glBindBuffer(GL_ARRAY_BUFFER, bitangentbuffer);
-    glVertexAttribPointer(
-        4,        // attribute
-        3,        // size
-        GL_FLOAT, // type
-        GL_FALSE, // normalized?
-        0,        // stride
-        (void *)0 // array buffer offset
-    );
+    glBindVertexArray(vao);
 
     // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
@@ -283,19 +242,9 @@ void Object::Draw()
     glUniform1i(SpecularTextureID, 2);
 
     // Draw the triangles !
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glDrawElements(
-        GL_TRIANGLES,      // mode
-        indices.size(),    // count
-        GL_UNSIGNED_SHORT, // type
-        (void *)0          // element array buffer offset
-    );
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-    glDisableVertexAttribArray(3);
-    glDisableVertexAttribArray(4);
+    glBindVertexArray(0);
 }
 
 Object::~Object()
@@ -307,6 +256,8 @@ Object::~Object()
     glDeleteBuffers(1, &normalbuffer);
     glDeleteBuffers(1, &tangentbuffer);
     glDeleteBuffers(1, &bitangentbuffer);
+    glDeleteBuffers(1, &elementbuffer);
+    glDeleteBuffers(1, &vao);
     glDeleteTextures(1, &DiffuseTexture);
     glDeleteTextures(1, &NormalTexture);
     glDeleteTextures(1, &SpecularTexture);

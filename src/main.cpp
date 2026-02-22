@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,21 +19,29 @@
 #include "Object.h"
 #include "ScriptComponent.h"
 
-
-
 int main(void)
 {
-    GLFWwindow *window;
+    GLFWwindow* window = nullptr;
 
-    /* Initialize the library */
-    if (!glfwInit())
+    // Initialize GLFW
+    if (!glfwInit()){
+        std::cout << "Failed to initialize GLFW" << std::endl;
         return -1;
+    }
+    
+
+    // Window Settings
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     /* Create a windowed mode window and its OpenGL context */
     float ImGuiMainScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
     window = glfwCreateWindow((int)(1280 * ImGuiMainScale), (int)(800 * ImGuiMainScale), "FrancumEngine", NULL, NULL);
     if (!window)
     {
+        std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -41,6 +49,15 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
+    int version = gladLoadGL(glfwGetProcAddress);
+    if (version == 0)
+    {
+        std::cout << "Failed to initialize OpenGL context" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -56,7 +73,7 @@ int main(void)
     style.FontScaleDpi = ImGuiMainScale; // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 130");
+    ImGui_ImplOpenGL3_Init("#version 330");
 
     // UI Variables
     bool fastReload = false;
@@ -95,9 +112,6 @@ int main(void)
 
     int winWidth, winHeight;
     glfwGetWindowSize(window, &winWidth, &winHeight);
-
-    if (glewInit() == GLEW_OK)
-        std::cout << glGetString(GL_VERSION) << std::endl;
 
     // Dark blue background
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
@@ -250,6 +264,7 @@ int main(void)
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    glfwDestroyWindow(window);
     glfwTerminate();
 
     if(fastReload){

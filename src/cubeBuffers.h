@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include <glad/gl.h>
 
 static const GLfloat g_vertex_buffer_data[] = {
         -1.0f, -1.0f, -1.0f, // triangle 1 : begin

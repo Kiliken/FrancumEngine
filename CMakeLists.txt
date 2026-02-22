@@ -21,8 +21,7 @@ file(GLOB RESOURCE_OBJECTS CONFIGURE_DEPENDS
 add_executable(Francum
 
 	# Main
-    # src/main.cpp
-	src/gladTest.cpp
+    src/main.cpp
 	
 	# Glad
 	src/gl.c
