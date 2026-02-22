@@ -21,7 +21,11 @@ file(GLOB RESOURCE_OBJECTS CONFIGURE_DEPENDS
 add_executable(Francum
 
 	# Main
-    src/main.cpp
+    # src/main.cpp
+	src/gladTest.cpp
+	
+	# Glad
+	src/gl.c
 
 	# ImGui core
 	dep/include/imgui/imgui.cpp
@@ -66,7 +70,6 @@ target_link_libraries(Francum PRIVATE
 	odbc32
 	odbccp32
 	glfw3dll
-	glew32
 	lua
 )
 
