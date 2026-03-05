@@ -21,20 +21,20 @@
 
 int main(void)
 {
-    GLFWwindow* window = nullptr;
+    GLFWwindow *window = nullptr;
 
     // Initialize GLFW
-    if (!glfwInit()){
+    if (!glfwInit())
+    {
         std::cout << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
-    
 
     // Window Settings
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
     /* Create a windowed mode window and its OpenGL context */
     float ImGuiMainScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
@@ -82,7 +82,6 @@ int main(void)
     glm::vec3 cubePos, cubeRot = glm::vec3(1, 1, 1);
     float cubeScale = 1.f;
 
-    
     // Initiate Lua Scripting
     sol::state lua;
     lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os);
@@ -90,7 +89,6 @@ int main(void)
     SetupConstants(lua);
     lua["FEngine"] = lua.create_table();
     lua.script("print('[Sol3] Lua Scripting Loaded')");
-
 
     // Initialize Camera
     Camera camera(window);
@@ -108,7 +106,6 @@ int main(void)
             loadedScripts.push_back(std::make_unique<ScriptComponent>(lua, file));
         }
     }
-    
 
     int winWidth, winHeight;
     glfwGetWindowSize(window, &winWidth, &winHeight);
@@ -142,7 +139,6 @@ int main(void)
     // Create and compile our GLSL program from the shaders
     GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
 
-
     {
         DefaultObjectConfig.fileName = CUBE_MODEL;
         DefaultObjectConfig.prog = &programID;
@@ -150,7 +146,6 @@ int main(void)
         DefaultObjectConfig.camera = &Projection;
         DefaultObjectConfig.lightPos = &lightPos;
     }
-
 
     Object cube(CUBE_MODEL);
 
@@ -165,37 +160,85 @@ int main(void)
     {
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 
+        // Resize Window
+        int w,h;
+        glfwGetFramebufferSize(window, &w, &h);
+        if(w != winWidth || h != winHeight){
+            winWidth = w;
+            winHeight = h;
+
+            glViewport(0,0,winWidth,winHeight);
+            camera.resizeView(winWidth,winHeight);
+        }
+
+
+        // Delta Time
         double currentTime = glfwGetTime();
         float deltaTime = float(currentTime - lastTime);
         lastTime = currentTime;
 
         camera.Update(deltaTime);
 
-        if (camera.showUI)
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::SetMouseCursor((camera.showUI ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None));
+        
+
+        // Main Menu
+        if (ImGui::BeginMainMenuBar())
         {
-            // Start the Dear ImGui frame
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Reload", "F5")) //Reload Engine
+                {
+                    fastReload = true;
+                    glfwSetWindowShouldClose(window, GLFW_TRUE);
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Edit"))
+            {
+                if (ImGui::MenuItem("Create"))
+                {
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("View"))
+            {
+                if (ImGui::MenuItem("Show/Hide FPS"))
+                {
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("?"))
+            {
+                if (ImGui::MenuItem("Repository"))
+                {
+                    std::system("start \"\" \"https://github.com/Kiliken/FrancumEngine\"");
+                }
+                if (ImGui::MenuItem("Documentation"))
+                {
+                    std::system("start \"\" \"https://github.com/Kiliken/FrancumEngine\"");
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::Text("(%.1f FPS)", io.Framerate);
+            ImGui::EndMainMenuBar();
         }
 
         if (camera.showUI)
         {
 
-            static int counter = 0;
-
-
             // Standard Window
             ImGui::Begin("Francum Engine");
-            
-            
-            
-            if(ImGui::Button("Reload")){
-                fastReload = true;
-                glfwSetWindowShouldClose(window, GLFW_TRUE);
-            }
-            
-            
+
             ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
             ImGui::InputFloat3("Light Direction", glm::value_ptr(lightPos));
 
@@ -206,21 +249,17 @@ int main(void)
             ImGui::InputFloat3("Cube Pos", glm::value_ptr(cubePos));
             ImGui::InputFloat3("Cube Rot", glm::value_ptr(cubeRot));
             ImGui::SliderFloat("Cube Scale", // The text label for the slider
-                       &cubeScale,      // Address of the variable to link
-                       0.0f,              // Minimum value (v_min)
-                       10.0f,            // Maximum value (v_max)
-                       "%.1f");           // Display format (e.g., one decimal place)
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+                               &cubeScale,   // Address of the variable to link
+                               0.0f,         // Minimum value (v_min)
+                               10.0f,        // Maximum value (v_max)
+                               "%.1f");      // Display format (e.g., one decimal place)
             ImGui::End();
         }
 
-        cube.SetPosition(cubePos.x,cubePos.y,cubePos.z);
-        cube.SetRotation(cubeRot.x,cubeRot.y,cubeRot.z);
-        cube.SetScale(cubeScale,cubeScale,cubeScale);
+        cube.SetPosition(cubePos.x, cubePos.y, cubePos.z);
+        cube.SetRotation(cubeRot.x, cubeRot.y, cubeRot.z);
+        cube.SetScale(cubeScale, cubeScale, cubeScale);
 
-        
-        
         // Camera matrix
         View = glm::lookAt(
             camera.position,                    // Camera is here
@@ -243,12 +282,10 @@ int main(void)
         for (auto &script : loadedScripts)
             script->Draw();
 
-        if (camera.showUI)
-        {
-            // Rendering
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
+
+        // Rendering
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -267,7 +304,8 @@ int main(void)
     glfwDestroyWindow(window);
     glfwTerminate();
 
-    if(fastReload){
+    if (fastReload)
+    {
         std::system("start \"\" Francum.exe");
     }
 

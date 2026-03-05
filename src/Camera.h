@@ -35,6 +35,8 @@ public:
     ~Camera();
     void Update(float dt);
 
+    void resizeView(int w, int h);
+
     // directions
     glm::vec3 direction, right, up;
 
@@ -66,10 +68,10 @@ void Camera::Update(float dt)
         glfwGetCursorPos(win, &xpos, &ypos);
         // Reset mouse position
         glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
+
+        horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
+        verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
     }
-    
-    horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
-    verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
 
     // Direction : Spherical coordinates to Cartesian coordinates conversion
     direction = glm::vec3(
@@ -112,7 +114,7 @@ void Camera::Update(float dt)
         if(tabState == GLFW_PRESS && !tabWasDown)
         {
             showUI = !showUI;
-            glfwSetInputMode(win, GLFW_CURSOR, (showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN));
+            glfwSetInputMode(win, GLFW_CURSOR, (showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED));
             glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
         }
         if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -122,4 +124,9 @@ void Camera::Update(float dt)
         
         tabWasDown = (tabState == GLFW_PRESS);
     }
+}
+
+void Camera::resizeView(int w, int h) {
+    winWidth = w;
+    winHeight = h;
 }
