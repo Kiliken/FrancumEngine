@@ -1,4 +1,6 @@
 cube = nil
+suzanne = nil
+house = nil
 rotationY = 0
 time = 0
 
@@ -8,26 +10,26 @@ function OnStart()
     print("Script started!")
 	
 	-- Initialize objects
-    cube = Object.new("../res/cube.obj")
-	suzanne = Object.new("../res/suzanne.obj")
-	house = Object.new("../res/house.obj")
+    cube = Object.new()
+	suzanne = Object.new()
+	house = Object.new()
+
+	cube:AddModels("../res/cube.obj")
+	suzanne:AddModels("../res/suzanne.obj")
+	house:AddModels("../res/house.obj")
 	
 	-- Cube Texture Setup
-	cube:SetTexture("../res/diffuse.dds")
-	cube:SetNormalMap("../res/normals.dds")
-	cube:SetSpecularMap("../res/specular.dds")
-	
-	house:SetTexture("../res/house.dds")
+	cube:GetModel(0):SetTexture("../res/diffuse.dds")
+	cube:GetModel(0):SetNormalMap("../res/normals.dds")
+	cube:GetModel(0):SetSpecularMap("../res/specular.dds")
+
+	house:GetModel(0):SetTexture("../res/house.dds")
 	
 	suzanne:SetPosition(-3,0,0)
 	suzanne:SetRotation(0,35,0)
 	
 	house:SetPosition(-10,0,0)
 	house:SetRotation(0,65,0)
-
-    print("Engine =", FEngine)	
-    print("Inputs =", FEngine.Inputs)
-	print("IsKeyDown =", FEngine.Inputs.IsKeyDown)
 end
 
 function OnUpdate(dt)

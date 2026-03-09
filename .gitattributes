@@ -1,1 +1,4 @@
+
+# Third-party code
 /[Ss]etup/[Cc]ommon/* linguist-vendored
+/[Ss]rc/gl.c linguist-vendored

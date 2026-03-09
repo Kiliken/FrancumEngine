@@ -6,11 +6,13 @@ New-Item -Path "$($ProjectRoot)\build" -ItemType Directory
 New-Item -Path "$($ProjectRoot)\dep\include" -ItemType Directory
 New-Item -Path "$($ProjectRoot)\dep\include\sol" -ItemType Directory
 New-Item -Path "$($ProjectRoot)\dep\lib" -ItemType Directory
+New-Item -Path "$($PSScriptRoot)\external" -ItemType Directory
 
 $glfwDownloadUrl = "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.WIN64.zip"
 # $glewDownloadUrl = "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
 $glmDownloadUrl = "https://github.com/g-truc/glm/releases/download/1.0.2/glm-1.0.2.zip"
 $imguiDownloadUrl = "https://github.com/ocornut/imgui/archive/refs/tags/v1.92.5.zip"
+# $fastgltfDownloadUrl = "https://github.com/spnda/fastgltf/archive/refs/tags/v0.9.0.tar.gz"
 
 
 
@@ -29,6 +31,10 @@ if ( -not (Test-Path "$($PSScriptRoot)\imgui.zip")){
 	Write-Output "[openGL-portable-setup] Downloading ImGUI..."
 	curl.exe -L "$imguiDownloadUrl" -o "$($PSScriptRoot)\imgui.zip" --progress-bar
 }
+# if ( -not (Test-Path "$($PSScriptRoot)\fastgltf-0.9.0.tar.gz")){
+# 	Write-Output "[openGL-portable-setup] Downloading fastgltf..."
+# 	curl.exe -L "$fastgltfDownloadUrl" -o "$($PSScriptRoot)\fastgltf-0.9.0.tar.gz" --progress-bar
+# }
 
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -42,7 +48,8 @@ Write-Output "[openGL-portable-setup] Extracting GLM..."
 [System.IO.Compression.ZipFile]::ExtractToDirectory("$($PSScriptRoot)\glm.zip", "$($PSScriptRoot)")
 Write-Output "[openGL-portable-setup] Extracting ImGUI..."
 [System.IO.Compression.ZipFile]::ExtractToDirectory("$($PSScriptRoot)\imgui.zip", "$($ProjectRoot)\dep\include")
-
+# Write-Output "[openGL-portable-setup] Extracting fastgltf..."
+# tar -xzf "$($PSScriptRoot)\fastgltf-0.9.0.tar.gz" -C "$($PSScriptRoot)\external"
 
 
 # Dependencies Setup
@@ -76,6 +83,13 @@ Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_opengl3_l
 Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_glfw.cpp" -Destination "$($ProjectRoot)\dep\include\imgui"
 Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_glfw.h" -Destination "$($ProjectRoot)\dep\include\imgui"
 
+# fastgltf
+# & "$($PSScriptRoot)\GenerateLibs.bat" "fastgltf-0.9.0"
+# Copy-Item -Path "$($PSScriptRoot)\external\fastgltf-0.9.0\include\fastgltf" -Destination "$($ProjectRoot)\dep\include" -Recurse
+# Copy-Item -Path "$($PSScriptRoot)\external\fastgltf-0.9.0\libfastgltf.a" -Destination "$($ProjectRoot)\dep\lib" -Force
+
+# cgltf
+Copy-Item -Path "$($PSScriptRoot)\common\cgltf.h" -Destination "$($ProjectRoot)\dep\include" -Force
 
 # Setup Resources
 Copy-Item -Path "$($PSScriptRoot)\resources.rc" -Destination "$($ProjectRoot)\build" -Force

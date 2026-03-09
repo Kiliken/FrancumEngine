@@ -12,12 +12,21 @@
 
 #include "loadShader.h"
 #include "loadDDS.h"
-#include "loadOBJ.h"
 #include "Inputs.h"
 #include "Camera.h"
 #include "vboIndexer.h"
+#include "Model.h"
+#include "loadOBJ.h"
 #include "Object.h"
 #include "ScriptComponent.h"
+
+
+static uint64_t menuFlags = 0;
+/*
+Flags:
+    1 - Fast Reload
+
+*/
 
 int main(void)
 {
@@ -76,10 +85,10 @@ int main(void)
     ImGui_ImplOpenGL3_Init("#version 330");
 
     // UI Variables
-    bool fastReload = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     glm::vec3 lightPos = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
-    glm::vec3 cubePos, cubeRot = glm::vec3(1, 1, 1);
+    glm::vec3 cubePos = glm::vec3(0.0f);
+    glm::vec3 cubeRot = glm::vec3(0.0f);
     float cubeScale = 1.f;
 
     // Initiate Lua Scripting
@@ -140,14 +149,15 @@ int main(void)
     GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
 
     {
-        DefaultObjectConfig.fileName = CUBE_MODEL;
-        DefaultObjectConfig.prog = &programID;
-        DefaultObjectConfig.View = &View;
-        DefaultObjectConfig.camera = &Projection;
-        DefaultObjectConfig.lightPos = &lightPos;
+        DefaultModelConfig.fileName = CUBE_MODEL;
+        DefaultModelConfig.prog = &programID;
+        DefaultModelConfig.View = &View;
+        DefaultModelConfig.camera = &Projection;
+        DefaultModelConfig.lightPos = &lightPos;
     }
 
-    Object cube(CUBE_MODEL);
+    Object cube;
+    cube.AddModels("../res/cube.obj");
 
     float lastTime = 0.0f;
 
@@ -194,7 +204,7 @@ int main(void)
             {
                 if (ImGui::MenuItem("Reload", "F5")) //Reload Engine
                 {
-                    fastReload = true;
+                    menuFlags |= (1ULL << 1); // Fast Reload Flag to 1
                     glfwSetWindowShouldClose(window, GLFW_TRUE);
                 }
                 ImGui::EndMenu();
@@ -224,7 +234,7 @@ int main(void)
                 }
                 if (ImGui::MenuItem("Documentation"))
                 {
-                    std::system("start \"\" \"https://github.com/Kiliken/FrancumEngine\"");
+                    std::system("start \"\" \"https://kiliken.github.io/mdRenderer.html?mdurl=./data/worksMd/FrancumEn.md\"");
                 }
                 ImGui::EndMenu();
             }
@@ -240,14 +250,14 @@ int main(void)
             ImGui::Begin("Francum Engine");
 
             ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
-            ImGui::InputFloat3("Light Direction", glm::value_ptr(lightPos));
+            ImGui::DragFloat3("Light Direction", glm::value_ptr(lightPos));
 
-            // ImGui::SliderFloat("float", nullptr, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            
             ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a colorwd
 
             ImGui::Text("Cube Transform");
-            ImGui::InputFloat3("Cube Pos", glm::value_ptr(cubePos));
-            ImGui::InputFloat3("Cube Rot", glm::value_ptr(cubeRot));
+            ImGui::DragFloat3("Cube Pos", glm::value_ptr(cubePos));
+            ImGui::DragFloat3("Cube Rot", glm::value_ptr(cubeRot));
             ImGui::SliderFloat("Cube Scale", // The text label for the slider
                                &cubeScale,   // Address of the variable to link
                                0.0f,         // Minimum value (v_min)
@@ -304,7 +314,7 @@ int main(void)
     glfwDestroyWindow(window);
     glfwTerminate();
 
-    if (fastReload)
+    if (menuFlags & (1ULL << 1)) // Fast Reload Flag Check
     {
         std::system("start \"\" Francum.exe");
     }

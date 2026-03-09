@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Object.h"
+#include "Model.h"
 
 class ScriptComponent
 {
@@ -81,18 +82,26 @@ void BindFunctions(sol::state &lua)
 {
     lua.new_usertype<Object>("Object",
                              sol::constructors<
-                                 Object(const char *)>(),
+                                 Object()>(),
                              "Update", &Object::Update,
                              "Draw", &Object::Draw,
+                             "AddModels", &Object::AddModels,
+                             "GetModel", &Object::GetModel,
                              "SetPosition", &Object::SetPosition,
                              "SetRotation", &Object::SetRotation,
-                             "SetScale", &Object::SetScale,
-                             "SetTexture", &Object::SetTexture,
-                             "SetNormalMap", &Object::SetNormalMap,
-                             "SetSpecularMap", &Object::SetSpecularMap);
+                             "SetScale", &Object::SetScale);
+
+    lua.new_usertype<Model>("Model",
+                             "SetTexture", &Model::SetTexture,
+                             "SetNormalMap", &Model::SetNormalMap,
+                             "SetSpecularMap", &Model::SetSpecularMap);
 
     lua.new_usertype<Inputs>("Inputs", "IsKeyDown", &Inputs::IsKeyDown);
 }
+
+/*
+
+*/
 
 void SetupConstants(sol::state &lua)
 {
