@@ -15,7 +15,7 @@ function OnStart()
 	house = Object.new()
 
 	cube:AddModels("../res/cube.obj")
-	suzanne:AddModels("../res/suzanne.obj")
+	suzanne:AddModels("../res/DamagedHelmet.gltf")
 	house:AddModels("../res/house.obj")
 	
 	-- Cube Texture Setup
@@ -37,10 +37,10 @@ function OnUpdate(dt)
     time = time + dt
 
     -- smooth up/down motion
-    local amplitude = 1.0      -- how high it moves
-    local speed = 2.0          -- how fast it moves
+    local amplitude = 1.0
+    local speed = 1.0
     local offsetY = math.sin(time * speed) * amplitude
-	local suzanneRotY = math.sin(time * speed) * 180
+	local suzanneRotY = math.sin(time * speed * 0.5) * 180
 
     -- rotation
     rotationY = rotationY + 1.5

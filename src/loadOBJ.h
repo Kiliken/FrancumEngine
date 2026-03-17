@@ -11,10 +11,23 @@
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 
+
+const char* getTexturePath(cgltf_texture* tex)
+{
+    static char fullPath[512];
+
+    if (!tex || !tex->image || !tex->image->uri)
+        return nullptr;
+
+    snprintf(fullPath, sizeof(fullPath), "../res/%s", tex->image->uri);
+    return fullPath;
+}
+
+
 bool loadGlTf(const char *path, std::vector<Model> &models)
 {
     cgltf_options options = {};
-    cgltf_data *data = NULL;
+    cgltf_data *data = nullptr;
     cgltf_result result;
 
     // Parse file
@@ -23,6 +36,7 @@ bool loadGlTf(const char *path, std::vector<Model> &models)
         return false;
 
     // Load Data
+    result = cgltf_load_buffers(&options, data, path);
     if (result != cgltf_result_success)
     {
         cgltf_free(data);
@@ -94,25 +108,30 @@ bool loadGlTf(const char *path, std::vector<Model> &models)
                 }
             }
 
+            models.emplace_back(positions, uvs, normals, indices);
+
             cgltf_material *mat = prim->material;
 
-            cgltf_texture *diffuseTex = nullptr;
-            cgltf_texture *normalTex = nullptr;
-            cgltf_texture *specularTex = nullptr;
-
             // Diffuse
-            if (mat && mat->pbr_metallic_roughness.base_color_texture.texture)
-                diffuseTex = mat->pbr_metallic_roughness.base_color_texture.texture;
+            if (mat && mat->pbr_metallic_roughness.base_color_texture.texture){
+                const char* url = getTexturePath(mat->pbr_metallic_roughness.base_color_texture.texture);
+                if(url != nullptr)
+                    models.back().SetTexture(url);
+            }
 
             // Normal
-            if (mat && mat->normal_texture.texture)
-                normalTex = mat->normal_texture.texture;
+            if (mat && mat->normal_texture.texture){
+                const char* url = getTexturePath(mat->normal_texture.texture);
+                if(url != nullptr)
+                    models.back().SetNormalMap(url);
+            }
 
             // Specular
-            if (mat && mat->pbr_metallic_roughness.metallic_roughness_texture.texture)
-                specularTex = mat->pbr_metallic_roughness.metallic_roughness_texture.texture;
-
-            models.emplace_back(positions, uvs, normals);
+            if (mat && mat->pbr_metallic_roughness.metallic_roughness_texture.texture){
+                const char* url = getTexturePath(mat->pbr_metallic_roughness.metallic_roughness_texture.texture);
+                if(url != nullptr)
+                    models.back().SetSpecularMap(url);
+            }
         }
     }
 

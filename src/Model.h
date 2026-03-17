@@ -37,7 +37,8 @@ class Model
 {
 
 public:
-    Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos);
+    Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos);
+    Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices);
     Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals);
     ~Model();
 
@@ -95,7 +96,7 @@ private:
     glm::vec3 *lightPos;
 };
 
-Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
+Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
     : shaders(prog), view(View), projection(camera), lightPos(lightPos)
 {
     std::vector<glm::vec3> tempVertices = inVertices;
@@ -104,9 +105,21 @@ Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::ve
     std::vector<glm::vec3> tempTangents;
     std::vector<glm::vec3> tempBitangents;
 
-    computeTangentBasis(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents);
-    indexVBO_TBN(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents, indices, vertices, uvs, normals, tangents, bitangents);
 
+    if(inIndices.empty()){
+        computeTangentBasis(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents);
+        indexVBO_TBN(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents, indices, vertices, uvs, normals, tangents, bitangents);
+    } else{
+
+        indices = inIndices;
+
+        vertices = tempVertices;
+        uvs = tempUvs;
+        normals = tempNormals;
+
+        computeTangentsIndexed(vertices, uvs, normals, indices, tangents, bitangents);
+    }
+    
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
@@ -160,8 +173,13 @@ Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::ve
     transform = glm::mat4(1.0f);
 }
 
+Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices)
+    : Model(inVertices, inUvs, inNormals,inIndices, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
+{
+}
+
 Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals)
-    : Model(inVertices, inUvs, inNormals, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
+    : Model(inVertices, inUvs, inNormals,std::vector<unsigned int>{}, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
 {
 }
 
