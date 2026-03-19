@@ -1,6 +1,5 @@
 @echo off
 
-if exist "%localappdata%/w64cmake/bin"	set PATH=%localappdata%/w64cmake/bin;%PATH%
 if exist "%localappdata%/w64devkit/bin" set PATH=%localappdata%/w64devkit/bin;%PATH%
 
 if not exist "%cd%/build" md build
