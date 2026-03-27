@@ -6,7 +6,7 @@
 
 Francum Engineは、すぐに開発を始めたいエンジニアのために設計されました。「Frankly Portable（率直に言ってポータブル）」という名の通り、リポジトリには独自のツールチェーン（コンパイラ、ビルドシステム、スクリプト環境）が同梱されています。外部ソフトウェアをインストールすることなく、あらゆるWindowsマシンでゲームのビルドと実行が可能です。
 
-<a href="https://www.youtube.com/watch?v=" target="_blank" >
+<a href="https://www.youtube.com/watch?v=f9MxPtcVE4Y" target="_blank" >
 
 ![YTThumbnail](videoPreview.jpg)
 

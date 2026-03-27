@@ -43,7 +43,9 @@
 # Project Specific
 *.zip
 *.tar.gz
+*.spv
 /[Dd]ep/
 /[Bb]uild/
 !/[Rr]es/[Ee]mbed/*.o
+/[Rr]es/[Ss]haders/[Ss]haderTools/
 /[Ss]etup/[Ee]xternal/
