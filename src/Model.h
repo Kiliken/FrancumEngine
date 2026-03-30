@@ -33,13 +33,22 @@ struct ModelConfig
 
 ModelConfig DefaultModelConfig;
 
+struct Vertex
+{
+    glm::vec3 position;
+    glm::vec2 uv;
+    glm::vec3 normal;
+    glm::vec3 tangent;
+    glm::vec3 bitangent;
+};
+
 class Model
 {
 
 public:
-    Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos);
-    Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices);
-    Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals);
+    Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos);
+    Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices);
+    Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals);
     ~Model();
 
     void Update(float deltaTime, const glm::mat4 &trans);
@@ -52,7 +61,10 @@ public:
 
 private:
     // Render
-    std::vector<glm::vec3> vertices;
+
+    std::vector<Vertex> vertices;
+
+    std::vector<glm::vec3> positions;
     std::vector<glm::vec2> uvs;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec3> tangents;
@@ -60,6 +72,7 @@ private:
     std::vector<unsigned int> indices;
 
     GLuint vao;
+    GLuint vbo;
     GLuint elementbuffer;
     GLuint vertexbuffer;
     GLuint uvsbuffer;
@@ -96,62 +109,83 @@ private:
     glm::vec3 *lightPos;
 };
 
-Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
+Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
     : shaders(prog), view(View), projection(camera), lightPos(lightPos)
 {
-    std::vector<glm::vec3> tempVertices = inVertices;
+    std::vector<glm::vec3> tempPositions = inPositions;
     std::vector<glm::vec2> tempUvs = inUvs;
     std::vector<glm::vec3> tempNormals = inNormals;
     std::vector<glm::vec3> tempTangents;
     std::vector<glm::vec3> tempBitangents;
 
-
-    if(inIndices.empty()){
-        computeTangentBasis(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents);
-        indexVBO_TBN(tempVertices, tempUvs, tempNormals, tempTangents, tempBitangents, indices, vertices, uvs, normals, tangents, bitangents);
-    } else{
+    if (inIndices.empty())
+    {
+        computeTangentBasis(tempPositions, tempUvs, tempNormals, tempTangents, tempBitangents);
+        indexVBO_TBN(tempPositions, tempUvs, tempNormals, tempTangents, tempBitangents, indices, positions, uvs, normals, tangents, bitangents);
+    }
+    else
+    {
 
         indices = inIndices;
 
-        vertices = tempVertices;
+        positions = tempPositions;
         uvs = tempUvs;
         normals = tempNormals;
 
-        computeTangentsIndexed(vertices, uvs, normals, indices, tangents, bitangents);
+        computeTangentsIndexed(positions, uvs, normals, indices, tangents, bitangents);
     }
-    
+
+    std::vector<Vertex> vertices;
+
+    for (size_t i = 0; i < positions.size(); i++)
+    {
+        Vertex v;
+        v.position = positions[i];
+        v.uv = uvs[i];
+        v.normal = normals[i];
+        v.tangent = tangents[i];
+        v.bitangent = bitangents[i];
+        vertices.push_back(v);
+    }
+
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(0);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-    glGenBuffers(1, &uvsbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uvsbuffer);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(0); // position
+    glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex),
+        (void *)offsetof(Vertex, position));
 
-    glGenBuffers(1, &normalbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(1); // uv
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex),
+        (void *)offsetof(Vertex, uv));
 
-    glGenBuffers(1, &tangentbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
-    glBufferData(GL_ARRAY_BUFFER, tangents.size() * sizeof(glm::vec3), &tangents[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(2); // normal
+    glVertexAttribPointer(
+        2, 3, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex),
+        (void *)offsetof(Vertex, normal));
 
-    glGenBuffers(1, &bitangentbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, bitangentbuffer);
-    glBufferData(GL_ARRAY_BUFFER, bitangents.size() * sizeof(glm::vec3), &bitangents[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(3); // tangent
+    glVertexAttribPointer(
+        3, 3, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex),
+        (void *)offsetof(Vertex, tangent));
+
+    glEnableVertexAttribArray(4); // bitangent
+    glVertexAttribPointer(
+        4, 3, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex),
+        (void *)offsetof(Vertex, bitangent));
+    
+    
 
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
@@ -173,13 +207,13 @@ Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::ve
     transform = glm::mat4(1.0f);
 }
 
-Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices)
-    : Model(inVertices, inUvs, inNormals,inIndices, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
+Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices)
+    : Model(inPositions, inUvs, inNormals, inIndices, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
 {
 }
 
-Model::Model(const std::vector<glm::vec3> &inVertices, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals)
-    : Model(inVertices, inUvs, inNormals,std::vector<unsigned int>{}, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
+Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals)
+    : Model(inPositions, inUvs, inNormals, std::vector<unsigned int>{}, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
 {
 }
 
@@ -231,7 +265,6 @@ void Model::Draw()
 
 Model::~Model()
 {
-    
 }
 
 void Model::Destroy()

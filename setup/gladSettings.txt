@@ -1,0 +1,30 @@
+
+Online Generator:
+https://gen.glad.sh/
+
+---
+
+# glad2 
+> version 2.0.8
+
+## APIs
+
+- gl 4.6 Core
+
+## Extensions
+
+- GL_ARB_gl_spirv
+- GL_ARB_spirv_extensions
+- GL_ARB_direct_state_access
+- GL_ARB_multi_draw_indirect
+- GL_ARB_draw_indirect
+- GL_ARB_bindless_texture
+- GL_ARB_texture_storage
+- GL_ARB_texture_view
+- GL_ARB_compute_shader
+- GL_ARB_shader_storage_buffer_object
+- GL_ARB_shader_image_load_store
+- GL_KHR_debug
+- GL_ARB_sync
+
+## Options

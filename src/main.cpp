@@ -146,7 +146,8 @@ int main(void)
     );
 
     // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
+    //GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
+    GLuint programID = LoadSPIRV("../res/shaders/StandardShader.vert.spv", "../res/shaders/StandardShader.frag.spv");
 
     {
         DefaultModelConfig.fileName = CUBE_MODEL;

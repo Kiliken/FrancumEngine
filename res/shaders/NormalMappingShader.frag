@@ -1,18 +1,18 @@
-#version 330 core
+#version 460 core
 
-in vec2 UV;
-in vec3 LightDirection_tangentspace;
-in vec3 EyeDirection_tangentspace;
+layout(location = 20) in vec2 UV;
+layout(location = 23) in vec3 LightDirection_tangentspace;
+layout(location = 24) in vec3 EyeDirection_tangentspace;
 
-out vec3 color;
+layout(location = 25) out vec3 color;
 
-uniform sampler2D DiffuseTextureSampler;
-uniform sampler2D NormalTextureSampler;
-uniform sampler2D SpecularTextureSampler;
+layout(location = 15) uniform sampler2D DiffuseTextureSampler;
+layout(location = 16) uniform sampler2D NormalTextureSampler;
+layout(location = 17) uniform sampler2D SpecularTextureSampler;
 
-// Artistic controls
-uniform float AmbientStrength = 0.2;
-uniform float LightPower = 1.1;
+
+layout(location = 18) uniform float AmbientStrength = 0.2;
+layout(location = 19) uniform float LightPower = 1.1;
 
 void main() {
 

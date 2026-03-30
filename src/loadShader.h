@@ -8,6 +8,41 @@
 #include <cstdio>
 #include <vector>
 
+struct BinaryData
+{
+    std::vector<uint32_t> data; // Changed to uint32_t for alignment
+    size_t sizeBytes;           // Keep track of the actual byte count
+};
+
+BinaryData LoadBinaryFile(const char *path)
+{
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open())
+    {
+        printf("Failed to open file: %s\n", path);
+        return {};
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    
+    // SPIR-V files MUST be a multiple of 4 bytes. 
+    // If it's not, the file is corrupted.
+    if (fileSize % 4 != 0) {
+        printf("Error: SPIR-V file size is not a multiple of 4: %s\n", path);
+        return {};
+    }
+
+    BinaryData result;
+    result.sizeBytes = fileSize;
+    result.data.resize(fileSize / 4); // Resize based on 32-bit words
+
+    file.seekg(0, std::ios::beg);
+    file.read(reinterpret_cast<char*>(result.data.data()), fileSize);
+    file.close();
+
+    return result;
+}
+
 GLuint LoadShaders(const char *vertex_file_path, const char *fragment_file_path)
 {
 
@@ -83,6 +118,52 @@ GLuint LoadShaders(const char *vertex_file_path, const char *fragment_file_path)
 	GLuint ProgramID = glCreateProgram();
 	glAttachShader(ProgramID, VertexShaderID);
 	glAttachShader(ProgramID, FragmentShaderID);
+	glLinkProgram(ProgramID);
+
+	// Check the program
+	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
+	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0)
+	{
+		std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
+		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+		printf("%s\n", &ProgramErrorMessage[0]);
+	}
+
+	glDetachShader(ProgramID, VertexShaderID);
+	glDetachShader(ProgramID, FragmentShaderID);
+
+	glDeleteShader(VertexShaderID);
+	glDeleteShader(FragmentShaderID);
+
+	return ProgramID;
+}
+
+GLuint LoadSPIRV(const char *vertex_file_path, const char *fragment_file_path)
+{
+	// Load SPIR-V files
+	BinaryData vsFile = LoadBinaryFile(vertex_file_path);
+	BinaryData fsFile = LoadBinaryFile(fragment_file_path);
+
+	GLint Result = GL_FALSE;
+	int InfoLogLength;
+
+	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+	glShaderBinary(1, &VertexShaderID, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, &vsFile.data[0], (GLsizei)vsFile.sizeBytes);
+	glSpecializeShader(VertexShaderID, "VSMain", 0, nullptr, nullptr);
+
+	GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderBinary(1, &FragmentShaderID, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, &fsFile.data[0], (GLsizei)fsFile.sizeBytes);
+	glSpecializeShader(FragmentShaderID, "PSMain", 0, nullptr, nullptr);
+	// https://wikis.khronos.org/opengl/SPIR-V
+
+
+	// Link the program
+	printf("Linking program\n");
+	GLuint ProgramID = glCreateProgram();
+	glAttachShader(ProgramID, VertexShaderID);
+	glAttachShader(ProgramID, FragmentShaderID);
+	glProgramParameteri(ProgramID, GL_PROGRAM_SEPARABLE, GL_TRUE);
 	glLinkProgram(ProgramID);
 
 	// Check the program
