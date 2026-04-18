@@ -3,8 +3,12 @@
 #include <iostream>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "loadShader.h"
 #include "loadDDS.h"
@@ -40,6 +44,21 @@ struct Vertex
     glm::vec3 normal;
     glm::vec3 tangent;
     glm::vec3 bitangent;
+};
+
+struct CameraUBO
+{
+    glm::mat4 M;
+    glm::mat4 V;
+    glm::mat4 P;
+};
+
+struct MaterialIDs
+{
+    int diffuse;
+    int normal;
+    int specular;
+    int padding;
 };
 
 class Model
@@ -80,33 +99,32 @@ private:
     GLuint tangentbuffer;
     GLuint bitangentbuffer;
 
-    GLuint DiffuseTextureID;
-    GLuint NormalTextureID;
-    GLuint SpecularTextureID;
     GLuint MatrixID;
     GLuint ModelMatrixID;
-    GLuint ModelView3x3MatrixID;
+    GLuint ModelViewMatrixID;
     GLuint viewId;
     GLuint light;
+
+    // Material
+    GLuint TexturesID;
+    MaterialIDs mat;
+    GLuint MaterialUBO;
 
     GLuint DiffuseTexture;
     GLuint NormalTexture;
     GLuint SpecularTexture;
 
     // Transform
+    GLuint CamUBOID;
+    CameraUBO cam;
+
     glm::mat4 *projection;
-    glm::mat4 mvp;
-
-    glm::mat4 mv;
-    glm::mat3 mv33;
-
     glm::mat4 transform;
+    glm::mat4 *view;
+    glm::vec3 *lightPos;
 
     // External
     GLuint *shaders;
-
-    glm::mat4 *view;
-    glm::vec3 *lightPos;
 };
 
 Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
@@ -184,8 +202,6 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
         4, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex),
         (void *)offsetof(Vertex, bitangent));
-    
-    
 
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
@@ -195,14 +211,27 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
     NormalTexture = loadDDS("../res/baseNormals.dds");
     SpecularTexture = loadDDS("../res/baseSpecular.dds");
 
-    DiffuseTextureID = glGetUniformLocation(*shaders, "DiffuseTextureSampler");
-    NormalTextureID = glGetUniformLocation(*shaders, "NormalTextureSampler");
-    SpecularTextureID = glGetUniformLocation(*shaders, "SpecularTextureSampler");
-    MatrixID = glGetUniformLocation(*shaders, "MVP");
-    viewId = glGetUniformLocation(*shaders, "V");
+    mat.diffuse = 0;
+    mat.normal = 1;
+    mat.specular = 2;
+
+    glGenBuffers(1, &MaterialUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, MaterialUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialIDs), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, MaterialUBO);
+
+    glGenBuffers(1, &CamUBOID);
+    glBindBuffer(GL_UNIFORM_BUFFER, CamUBOID);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBO), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, CamUBOID);
+
+    //MatrixID = glGetUniformLocation(*shaders, "P");
+    //viewId = glGetUniformLocation(*shaders, "V");
     ModelMatrixID = glGetUniformLocation(*shaders, "M");
-    ModelView3x3MatrixID = glGetUniformLocation(*shaders, "MV3x3");
+
     light = glGetUniformLocation(*shaders, "LightDirection_worldspace");
+
+    TexturesID = glGetUniformLocation(*shaders, "textures");
 
     transform = glm::mat4(1.0f);
 }
@@ -222,9 +251,11 @@ void Model::Update(float deltaTime, const glm::mat4 &trans)
 
     transform = trans;
 
-    mv = *view * transform;
-    mv33 = glm::mat3(mv);
-    mvp = *projection * mv;
+    {
+        cam.P = *projection;
+        cam.V = *view;
+        cam.M = transform;
+    }
 }
 
 void Model::Draw()
@@ -235,27 +266,26 @@ void Model::Draw()
     glBindVertexArray(vao);
 
     // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &transform[0][0]);
-    glUniformMatrix4fv(viewId, 1, GL_FALSE, &((*view)[0][0]));
-    glUniformMatrix3fv(ModelView3x3MatrixID, 1, GL_FALSE, &mv33[0][0]);
+    // glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &cam.P[0][0]);
+    // glUniformMatrix4fv(viewId, 1, GL_FALSE, &cam.V[0][0]);
+    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &cam.M[0][0]);
 
     glUniform3f(light, (*lightPos).x, (*lightPos).y, (*lightPos).z);
 
-    // Bind our diffuse texture in Texture Unit 0
-    glActiveTexture(GL_TEXTURE0);
+    glBindBuffer(GL_UNIFORM_BUFFER, CamUBOID);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &cam);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, MaterialUBO);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialIDs), &mat);
+
+    glUniform1i(TexturesID, 0);
+
+    glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_2D, DiffuseTexture);
-    glUniform1i(DiffuseTextureID, 0);
-
-    // Bind our normal texture in Texture Unit 1
-    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, NormalTexture);
-    glUniform1i(NormalTextureID, 1);
-
-    // Bind our specular texture in Texture Unit 2
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE0 + 2);
     glBindTexture(GL_TEXTURE_2D, SpecularTexture);
-    glUniform1i(SpecularTextureID, 2);
 
     // Draw the triangles !
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
@@ -278,6 +308,8 @@ void Model::Destroy()
     glDeleteBuffers(1, &bitangentbuffer);
     glDeleteBuffers(1, &elementbuffer);
     glDeleteBuffers(1, &vao);
+    glDeleteBuffers(1, &MaterialUBO);
+    glDeleteBuffers(1, &CamUBOID);
     glDeleteTextures(1, &DiffuseTexture);
     glDeleteTextures(1, &NormalTexture);
     glDeleteTextures(1, &SpecularTexture);

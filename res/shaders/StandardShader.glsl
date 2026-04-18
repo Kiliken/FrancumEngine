@@ -15,15 +15,25 @@ layout(location = 22) out vec3 EyeDirection_cameraspace;
 layout(location = 23) out vec3 LightDirection_tangentspace;
 layout(location = 24) out vec3 EyeDirection_tangentspace;
 
-layout(location = 10) uniform mat4 MVP;
-layout(location = 11) uniform mat4 V;
+//layout(location = 10) uniform mat4 P;
+//layout(location = 11) uniform mat4 V;
 layout(location = 12) uniform mat4 M;
-layout(location = 13) uniform mat3 MV3x3;
+
 layout(location = 14) uniform vec3 LightDirection_worldspace;
+
+layout(std140, binding = 2) uniform Camera {
+	mat4 MTest;
+	mat4 V;
+	mat4 P;
+};
 
 
 void VSMain() {
-
+	
+	mat4 MV = V * M;
+	mat4 MVP = P * MV;
+	mat3 MV3x3 = mat3(MV);
+	
     gl_Position = MVP * vec4(vertexPosition_modelspace, 1.0);
 
     // World-space position
@@ -63,23 +73,29 @@ layout(location = 24) in vec3 EyeDirection_tangentspace;
 
 layout(location = 25) out vec3 color;
 
-layout(location = 15) uniform sampler2D DiffuseTextureSampler;
-layout(location = 16) uniform sampler2D NormalTextureSampler;
-layout(location = 17) uniform sampler2D SpecularTextureSampler;
+layout(location = 26) uniform sampler2D textures[16];
 
+layout(std140, binding = 1) uniform MaterialIndex {
+    int diffuseTex;
+    int normalTex;
+    int specularTex;
+	int padding;
+};
 
-layout(location = 18) uniform float AmbientStrength = 0.2;
-layout(location = 19) uniform float LightPower = 1.1;
+float AmbientStrength = 0.2;
+float LightPower = 1.1;
 
 
 void PSMain() {
 
+	int keep = diffuseTex;
+
     // Material
-    vec3 albedo = texture(DiffuseTextureSampler, UV).rgb;
-    vec3 specMap = texture(SpecularTextureSampler, UV).rgb * 0.3;
+    vec3 albedo = texture(textures[diffuseTex], UV).rgb;
+    vec3 specMap = texture(textures[specularTex], UV).rgb * 0.3;
 
     // Normal map
-    vec3 normal = texture(NormalTextureSampler, UV).rgb * 2.0 - 1.0;
+    vec3 normal = texture(textures[normalTex], UV).rgb * 2.0 - 1.0;
     normal = normalize(normal);
 
     // Lights
