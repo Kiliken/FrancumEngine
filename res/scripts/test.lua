@@ -1,6 +1,7 @@
 cube = nil
 suzanne = nil
 house = nil
+terrain = nil
 rotationY = 0
 time = 0
 
@@ -13,10 +14,12 @@ function OnStart()
     cube = Object.new()
 	suzanne = Object.new()
 	house = Object.new()
+	terrain = Object.new()
 
 	cube:AddModels("../res/cube.obj")
 	suzanne:AddModels("../res/DamagedHelmet.gltf")
 	house:AddModels("../res/house.obj")
+	terrain:AddModels("../res/plane.obj")
 	
 	-- Cube Texture Setup
 	cube:GetModel(0):SetTexture("../res/diffuse.dds")
@@ -24,12 +27,15 @@ function OnStart()
 	cube:GetModel(0):SetSpecularMap("../res/specular.dds")
 
 	house:GetModel(0):SetTexture("../res/house.dds")
+	terrain:GetModel(0):SetTexture("../res/dirtDiffuse.dds")
 	
-	suzanne:SetPosition(-3,0,0)
+	suzanne:SetPosition(-3,2,0)
 	suzanne:SetRotation(0,35,0)
 	
 	house:SetPosition(-10,0,0)
 	house:SetRotation(0,65,0)
+	
+	terrain:SetScale(3,1,3)
 end
 
 function OnUpdate(dt)
@@ -39,7 +45,7 @@ function OnUpdate(dt)
     -- smooth up/down motion
     local amplitude = 1.0
     local speed = 1.0
-    local offsetY = math.sin(time * speed) * amplitude
+    local offsetY = math.sin(time * speed) * amplitude + 2
 	local suzanneRotY = math.sin(time * speed * 0.5) * 180
 
     -- rotation
@@ -63,10 +69,12 @@ function OnUpdate(dt)
     cube:Update(dt)
 	suzanne:Update(dt)
 	house:Update(dt)
+	terrain:Update(dt)
 end
 
 function OnDraw()
     cube:Draw()
 	suzanne:Draw()
 	house:Draw()
+	terrain:Draw()
 end

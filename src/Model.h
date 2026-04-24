@@ -270,10 +270,10 @@ void Model::Draw()
     // glUniformMatrix4fv(viewId, 1, GL_FALSE, &cam.V[0][0]);
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &cam.M[0][0]);
 
-    glUniform3f(light, (*lightPos).x, (*lightPos).y, (*lightPos).z);
-
     glBindBuffer(GL_UNIFORM_BUFFER, CamUBOID);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &cam);
+
+    glUniform3f(light, (*lightPos).x, (*lightPos).y, (*lightPos).z);
 
     glBindBuffer(GL_UNIFORM_BUFFER, MaterialUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialIDs), &mat);
