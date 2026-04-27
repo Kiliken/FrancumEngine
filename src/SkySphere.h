@@ -21,7 +21,6 @@ public:
     ~SkySphere();
 
     void Draw();
-    void Destroy();
 
 private:
     // Render
@@ -31,7 +30,6 @@ private:
 
     const int X_SEG = 64;
     const int Y_SEG = 64;
-    const float M_PI = 3.1415926535f;
 
     // Shader Parm
     GLuint shaders;
@@ -42,6 +40,9 @@ private:
 
     GLuint ProjID;
     GLuint ViewID;
+
+    GLuint Texture;
+    GLuint textureID;
 
     // Transform
     glm::mat4 *projection;
@@ -104,8 +105,12 @@ SkySphere::SkySphere(glm::mat4* proj, glm::mat4* View)
 
     glBindVertexArray(0);
 
+
     ProjID = glGetUniformLocation(shaders, "projection");
     ViewID = glGetUniformLocation(shaders, "view");
+    
+    Texture = loadDDS("../res/baseDiffuse.dds");
+    textureID = glGetUniformLocation(shaders, "skyTex");
 
 }
 
@@ -121,20 +126,18 @@ void SkySphere::Draw()
     glUniformMatrix4fv(ViewID, 1, GL_FALSE, &((*view)[0][0]));
     glUniformMatrix4fv(ProjID, 1, GL_FALSE, &((*projection)[0][0]));
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+    glUniform1i(textureID, 0);
+
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
-
-    glBindVertexArray(0);
 }
 
 SkySphere::~SkySphere()
-{
-}
-
-void SkySphere::Destroy()
 {
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vertexBuffer);

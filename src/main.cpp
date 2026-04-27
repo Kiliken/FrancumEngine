@@ -18,8 +18,14 @@
 #include "Model.h"
 #include "loadOBJ.h"
 #include "Object.h"
+//#include "SkySphere.h"
 #include "ScriptComponent.h"
 
+// Force on Dedicated GPU
+extern "C" {
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
 static uint64_t menuFlags = 0;
 /*
