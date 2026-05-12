@@ -17,14 +17,20 @@ file(GLOB RESOURCE_OBJECTS CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/res/embed/*.o"
 )
 
+# Check for Main Files
+file(GLOB MAIN_FILES
+    src/*.cpp
+	src/utils/*.cpp
+)
+
 # Executable Files
 add_executable(Francum
 
-	# Main
-    src/main.cpp
-	
-	# Glad
+	# GLAD
 	src/gl.c
+	
+	# Main
+	${MAIN_FILES}
 
 	# ImGui core
 	dep/include/imgui/imgui.cpp

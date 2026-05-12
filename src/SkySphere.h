@@ -8,10 +8,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "loadShader.h"
-#include "loadDDS.h"
+#include "utils/loadShader.h"
+#include "utils/loadDDS.h"
 #include "Inputs.h"
-#include "vboIndexer.h"
+#include "utils/vboIndexer.h"
 
 class SkySphere
 {
@@ -109,7 +109,7 @@ SkySphere::SkySphere(glm::mat4* proj, glm::mat4* View)
     ProjID = glGetUniformLocation(shaders, "projection");
     ViewID = glGetUniformLocation(shaders, "view");
     
-    Texture = loadDDS("../res/baseDiffuse.dds");
+    Texture = Utils::loadDDS("../res/baseDiffuse.dds");
     textureID = glGetUniformLocation(shaders, "skyTex");
 
 }

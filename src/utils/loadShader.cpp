@@ -1,49 +1,36 @@
-#pragma once
+#include "loadShader.h"
 
-#include <glad/gl.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <cstdio>
-#include <vector>
-
-struct BinaryData
+BinaryData Utils::LoadBinaryFile(const char *path)
 {
-    std::vector<uint32_t> data; // Changed to uint32_t for alignment
-    size_t sizeBytes;           // Keep track of the actual byte count
-};
+	std::ifstream file(path, std::ios::binary | std::ios::ate);
+	if (!file.is_open())
+	{
+		printf("Failed to open file: %s\n", path);
+		return {};
+	}
 
-BinaryData LoadBinaryFile(const char *path)
-{
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file.is_open())
-    {
-        printf("Failed to open file: %s\n", path);
-        return {};
-    }
+	size_t fileSize = (size_t)file.tellg();
 
-    size_t fileSize = (size_t)file.tellg();
-    
-    // SPIR-V files MUST be a multiple of 4 bytes. 
-    // If it's not, the file is corrupted.
-    if (fileSize % 4 != 0) {
-        printf("Error: SPIR-V file size is not a multiple of 4: %s\n", path);
-        return {};
-    }
+	// SPIR-V files MUST be a multiple of 4 bytes.
+	// If it's not, the file is corrupted.
+	if (fileSize % 4 != 0)
+	{
+		printf("Error: SPIR-V file size is not a multiple of 4: %s\n", path);
+		return {};
+	}
 
-    BinaryData result;
-    result.sizeBytes = fileSize;
-    result.data.resize(fileSize / 4); // Resize based on 32-bit words
+	BinaryData result;
+	result.sizeBytes = fileSize;
+	result.data.resize(fileSize / 4); // Resize based on 32-bit words
 
-    file.seekg(0, std::ios::beg);
-    file.read(reinterpret_cast<char*>(result.data.data()), fileSize);
-    file.close();
+	file.seekg(0, std::ios::beg);
+	file.read(reinterpret_cast<char *>(result.data.data()), fileSize);
+	file.close();
 
-    return result;
+	return result;
 }
 
-GLuint LoadShaders(const char *vertex_file_path, const char *fragment_file_path)
+GLuint Utils::LoadShaders(const char *vertex_file_path, const char *fragment_file_path)
 {
 
 	// Create the shaders
@@ -139,7 +126,7 @@ GLuint LoadShaders(const char *vertex_file_path, const char *fragment_file_path)
 	return ProgramID;
 }
 
-GLuint LoadSPIRV(const char *vertex_file_path, const char *fragment_file_path)
+GLuint Utils::LoadSPIRV(const char *vertex_file_path, const char *fragment_file_path)
 {
 	// Load SPIR-V files
 	BinaryData vsFile = LoadBinaryFile(vertex_file_path);
@@ -156,7 +143,6 @@ GLuint LoadSPIRV(const char *vertex_file_path, const char *fragment_file_path)
 	glShaderBinary(1, &FragmentShaderID, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, &fsFile.data[0], (GLsizei)fsFile.sizeBytes);
 	glSpecializeShader(FragmentShaderID, "PSMain", 0, nullptr, nullptr);
 	// https://wikis.khronos.org/opengl/SPIR-V
-
 
 	// Link the program
 	printf("Linking program\n");

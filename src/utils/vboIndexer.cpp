@@ -1,27 +1,7 @@
-#pragma once
-
-#include <vector>
-#include <map>
-#include <glm/glm.hpp>
-#include <string.h>
-
-
-void indexVBO_TBN(
-	std::vector<glm::vec3> &in_vertices,
-	std::vector<glm::vec2> &in_uvs,
-	std::vector<glm::vec3> &in_normals,
-	std::vector<glm::vec3> &in_tangents,
-	std::vector<glm::vec3> &in_bitangents,
-
-	std::vector<unsigned int> &out_indices,
-	std::vector<glm::vec3> &out_vertices,
-	std::vector<glm::vec2> &out_uvs,
-	std::vector<glm::vec3> &out_normals,
-	std::vector<glm::vec3> &out_tangents,
-	std::vector<glm::vec3> &out_bitangents);
+#include "vboIndexer.h"
 
 // Returns true iif v1 can be considered equal to v2
-bool is_near(float v1, float v2)
+bool Utils::is_near(float v1, float v2)
 {
 	return fabs(v1 - v2) < 0.01f;
 }
@@ -29,7 +9,7 @@ bool is_near(float v1, float v2)
 // Searches through all already-exported vertices
 // for a similar one.
 // Similar = same position + same UVs + same normal
-bool getSimilarVertexIndex(
+bool Utils::getSimilarVertexIndex(
 	glm::vec3 &in_vertex,
 	glm::vec2 &in_uv,
 	glm::vec3 &in_normal,
@@ -60,19 +40,7 @@ bool getSimilarVertexIndex(
 	return false;
 }
 
-
-struct PackedVertex
-{
-	glm::vec3 position;
-	glm::vec2 uv;
-	glm::vec3 normal;
-	bool operator<(const PackedVertex that) const
-	{
-		return memcmp((void *)this, (void *)&that, sizeof(PackedVertex)) > 0;
-	};
-};
-
-void indexVBO_TBN(
+void Utils::indexVBO_TBN(
 	std::vector<glm::vec3> &in_vertices,
 	std::vector<glm::vec2> &in_uvs,
 	std::vector<glm::vec3> &in_normals,
@@ -114,7 +82,7 @@ void indexVBO_TBN(
 	}
 }
 
-void computeTangentBasis(
+void Utils::computeTangentBasis(
 	// inputs
 	std::vector<glm::vec3> &vertices,
 	std::vector<glm::vec2> &uvs,
@@ -161,7 +129,7 @@ void computeTangentBasis(
 	}
 }
 
-void computeTangentsIndexed(
+void Utils::computeTangentsIndexed(
 	const std::vector<glm::vec3> &positions,
 	const std::vector<glm::vec2> &uvs,
 	const std::vector<glm::vec3> &normals,

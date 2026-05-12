@@ -10,13 +10,13 @@
 
 #include <sol/sol.hpp>
 
-#include "loadShader.h"
-#include "loadDDS.h"
+#include "utils/loadShader.h"
+#include "utils/loadDDS.h"
 #include "Inputs.h"
 #include "Camera.h"
-#include "vboIndexer.h"
+#include "utils/vboIndexer.h"
 #include "Model.h"
-#include "loadOBJ.h"
+#include "utils/loadOBJ.h"
 #include "Object.h"
 //#include "SkySphere.h"
 #include "ScriptComponent.h"
@@ -33,6 +33,8 @@ Flags:
     1 - Fast Reload
 
 */
+
+ModelConfig DefaultModelConfig;
 
 int main(void)
 {
@@ -153,10 +155,10 @@ int main(void)
 
     // Create and compile our GLSL program from the shaders
     //GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
-    GLuint programID = LoadSPIRV("../res/shaders/StandardShader.vert.spv", "../res/shaders/StandardShader.frag.spv");
+    GLuint programID = Utils::LoadSPIRV("../res/shaders/StandardShader.vert.spv", "../res/shaders/StandardShader.frag.spv");
 
     {
-        DefaultModelConfig.fileName = CUBE_MODEL;
+        DefaultModelConfig.fileName = "../res/cube.obj";
         DefaultModelConfig.prog = &programID;
         DefaultModelConfig.View = &View;
         DefaultModelConfig.camera = &Projection;
