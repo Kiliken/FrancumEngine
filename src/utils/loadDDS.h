@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/gl.h>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -19,4 +20,5 @@
 
 namespace Utils{
     GLuint loadDDS(const char *imagepath);
+    glm::vec3 hexToVec3(const char* hex);
 }

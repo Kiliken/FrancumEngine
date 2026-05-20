@@ -78,6 +78,7 @@ public:
     void Destroy();
 
     void SetTexture(const char *path);
+    void SetColor(const char *colorHex);
     void SetNormalMap(const char *path);
     void SetSpecularMap(const char *path);
 
@@ -93,6 +94,8 @@ private:
     std::vector<glm::vec3> bitangents;
     std::vector<unsigned int> indices;
 
+    glm::vec3 color;
+
     GLuint vao;
     GLuint vbo;
     GLuint elementbuffer;
@@ -107,6 +110,7 @@ private:
     GLuint ModelViewMatrixID;
     GLuint viewId;
     GLuint light;
+    GLuint ColorID;
 
     // Material
     GLuint TexturesID;

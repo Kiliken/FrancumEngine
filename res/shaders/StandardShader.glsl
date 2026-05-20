@@ -73,7 +73,9 @@ layout(location = 24) in vec3 EyeDirection_tangentspace;
 
 layout(location = 25) out vec3 color;
 
-layout(location = 26) uniform sampler2D textures[16];
+layout(location = 26) uniform vec3 AlbedoColor;
+
+layout(location = 27) uniform sampler2D textures[16];
 
 layout(std140, binding = 1) uniform MaterialIndex {
     int diffuseTex;
@@ -121,6 +123,8 @@ void PSMain() {
 
     // Gamma Correction
     color = pow(color, vec3(1.0 / 2.2));
+	
+	color *= AlbedoColor;
 }
 
 #endif

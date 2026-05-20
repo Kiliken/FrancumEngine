@@ -18,7 +18,7 @@
 #include "Model.h"
 #include "utils/loadOBJ.h"
 #include "Object.h"
-//#include "SkySphere.h"
+#include "SkySphere.h"
 #include "ScriptComponent.h"
 
 // Force on Dedicated GPU
@@ -90,7 +90,7 @@ int main(void)
     style.FontScaleDpi = ImGuiMainScale; // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     // UI Variables
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -102,8 +102,8 @@ int main(void)
     // Initiate Lua Scripting
     sol::state lua;
     lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os);
-    BindFunctions(lua);
-    SetupConstants(lua);
+    ScriptComponent::BindFunctions(lua);
+    ScriptComponent::SetupConstants(lua);
     lua["FEngine"] = lua.create_table();
     lua.script("print('[Sol3] Lua Scripting Loaded')");
 
@@ -113,11 +113,12 @@ int main(void)
     // Initialize Inputs
     Inputs inputs(window);
     lua["FEngine"]["Inputs"] = &inputs;
+    lua["FEngine"]["Camera"] = &camera;
 
     // Load Scripts
     std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
     {
-        auto files = GetScriptsInFolder("../res/scripts/");
+        auto files = ScriptComponent::GetScriptsInFolder("../res/scripts/");
         for (auto &file : files)
         {
             loadedScripts.push_back(std::make_unique<ScriptComponent>(lua, file));
@@ -139,12 +140,6 @@ int main(void)
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-    // Camera Projections
-    glm::mat4 Projection;
-    if (true) // perspective
-        Projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
-    else // orthographic
-        Projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.0f, 100.0f);
 
     // Camera matrix
     glm::mat4 View = glm::lookAt(
@@ -161,7 +156,7 @@ int main(void)
         DefaultModelConfig.fileName = "../res/cube.obj";
         DefaultModelConfig.prog = &programID;
         DefaultModelConfig.View = &View;
-        DefaultModelConfig.camera = &Projection;
+        DefaultModelConfig.camera = &camera.projection;
         DefaultModelConfig.lightPos = &lightPos;
     }
 

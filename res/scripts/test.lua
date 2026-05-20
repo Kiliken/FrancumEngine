@@ -28,6 +28,7 @@ function OnStart()
 
 	house:GetModel(0):SetTexture("../res/house.dds")
 	terrain:GetModel(0):SetTexture("../res/dirtDiffuse.dds")
+	-- terrain:GetModel(0):SetColor("0xFF0000")
 	
 	suzanne:SetPosition(-3,2,0)
 	suzanne:SetRotation(0,35,0)
@@ -36,6 +37,8 @@ function OnStart()
 	house:SetRotation(0,65,0)
 	
 	terrain:SetScale(3,1,3)
+	
+	-- FEngine.Camera:SetProjMode("ORTHO")
 end
 
 function OnUpdate(dt)

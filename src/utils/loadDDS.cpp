@@ -89,3 +89,27 @@ GLuint Utils::loadDDS(const char *imagepath)
 
     return textureID;
 }
+
+glm::vec3 Utils::hexToVec3(const char* hex) {
+    if (!hex) return glm::vec3(1.0f, 0.0f, 1.0f);
+
+    // Skip prefixes
+    if (hex[0] == '#') {
+        hex++;
+    } else if ((hex[0] == '0') && (hex[1] == 'x' || hex[1] == 'X')) {
+        hex += 2;
+    }
+
+    // Check digits
+    if (std::strlen(hex) != 6)
+        return glm::vec3(1.0f, 0.0f, 1.0f);
+
+    // Convert hex string to integer
+    unsigned int value = std::strtoul(hex, nullptr, 16);
+
+    float r = ((value >> 16) & 0xFF) / 255.0f;
+    float g = ((value >> 8) & 0xFF) / 255.0f;
+    float b = (value & 0xFF) / 255.0f;
+
+    return glm::vec3(r, g, b);
+}

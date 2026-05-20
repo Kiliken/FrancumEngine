@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -33,9 +34,6 @@ private:
 public:
     Camera(GLFWwindow *mainWindow);
     ~Camera();
-    void Update(float dt);
-
-    void resizeView(int w, int h);
 
     // directions
     glm::vec3 direction, right, up;
@@ -43,8 +41,18 @@ public:
     // position
     glm::vec3 position = glm::vec3(0, 0, 5);
 
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+
     bool showUI = false;
 
     // field of view
     float FoV;
+    bool isPerspective = true;
+
+
+    void Update(float dt);
+    void resizeView(int w, int h);
+    void SetPosition(const float &x, const float &y, const float &z);
+    void SetRotation(const float &x, const float &y);
+    void SetProjMode(const char *mode);
 };

@@ -82,3 +82,21 @@ void Camera::resizeView(int w, int h) {
     winWidth = w;
     winHeight = h;
 }
+
+void Camera::SetPosition(const float &x, const float &y, const float &z)
+{
+    position = glm::vec3(x, y, z);
+}
+
+void Camera::SetRotation(const float &x, const float &y)
+{
+    verticalAngle = y;
+    horizontalAngle = x;
+}
+
+void Camera::SetProjMode(const char *mode){
+    if(std::strcmp(mode, "PERSP") == 0)
+        projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+    else if(std::strcmp(mode, "ORTHO") == 0)
+        projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.0f, 100.0f);
+}

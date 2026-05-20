@@ -101,12 +101,14 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
     //MatrixID = glGetUniformLocation(*shaders, "P");
     //viewId = glGetUniformLocation(*shaders, "V");
     ModelMatrixID = glGetUniformLocation(*shaders, "M");
+    ColorID = glGetUniformLocation(*shaders, "AlbedoColor");
 
     light = glGetUniformLocation(*shaders, "LightDirection_worldspace");
 
     TexturesID = glGetUniformLocation(*shaders, "textures");
 
     transform = glm::mat4(1.0f);
+    color = glm::vec3(1.0f);
 }
 
 Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices)
@@ -142,6 +144,7 @@ void Model::Draw()
     // glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &cam.P[0][0]);
     // glUniformMatrix4fv(viewId, 1, GL_FALSE, &cam.V[0][0]);
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &cam.M[0][0]);
+    glUniform3f(ColorID, color.x, color.y, color.z);
 
     glBindBuffer(GL_UNIFORM_BUFFER, CamUBOID);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &cam);
@@ -201,4 +204,8 @@ void Model::SetNormalMap(const char *path)
 void Model::SetSpecularMap(const char *path)
 {
     SpecularTexture = Utils::loadDDS(path);
+}
+
+void Model::SetColor(const char *colorHex){
+    color = Utils::hexToVec3(colorHex);
 }
