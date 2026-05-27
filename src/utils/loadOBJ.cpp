@@ -2,6 +2,7 @@
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
+#include "configs.h"
 
 const char* Utils::getTexturePath(cgltf_texture* tex)
 {
@@ -10,7 +11,7 @@ const char* Utils::getTexturePath(cgltf_texture* tex)
     if (!tex || !tex->image || !tex->image->uri)
         return nullptr;
 
-    snprintf(fullPath, sizeof(fullPath), "../res/%s", tex->image->uri);
+    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), tex->image->uri);
     return fullPath;
 }
 

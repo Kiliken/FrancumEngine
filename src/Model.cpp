@@ -1,5 +1,7 @@
 #include "Model.h"
 
+#include "configs.h"
+
 Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
     : shaders(prog), view(View), projection(camera), lightPos(lightPos)
 {
@@ -80,9 +82,9 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
-    DiffuseTexture = Utils::loadDDS("../res/baseDiffuse.dds");
-    NormalTexture = Utils::loadDDS("../res/baseNormals.dds");
-    SpecularTexture = Utils::loadDDS("../res/baseSpecular.dds");
+    DiffuseTexture = Utils::loadDDS(ASSETS("baseDiffuse.dds"));
+    NormalTexture = Utils::loadDDS(ASSETS("baseNormals.dds"));
+    SpecularTexture = Utils::loadDDS(ASSETS("baseSpecular.dds"));
 
     mat.diffuse = 0;
     mat.normal = 1;

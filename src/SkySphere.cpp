@@ -1,5 +1,7 @@
 #include "SkySphere.h"
 
+#include "configs.h"
+
 SkySphere::SkySphere(glm::mat4* proj, glm::mat4* View)
     : projection(proj), view(View)
 {
@@ -60,7 +62,7 @@ SkySphere::SkySphere(glm::mat4* proj, glm::mat4* View)
     ProjID = glGetUniformLocation(shaders, "projection");
     ViewID = glGetUniformLocation(shaders, "view");
     
-    Texture = Utils::loadDDS("../res/baseDiffuse.dds");
+    Texture = Utils::loadDDS(ASSETS("baseDiffuse.dds"));
     textureID = glGetUniformLocation(shaders, "skyTex");
 
 }

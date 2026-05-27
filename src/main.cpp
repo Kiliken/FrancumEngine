@@ -21,6 +21,8 @@
 #include "SkySphere.h"
 #include "ScriptComponent.h"
 
+#include "configs.h"
+
 // Force on Dedicated GPU
 extern "C" {
     __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -118,7 +120,7 @@ int main(void)
     // Load Scripts
     std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
     {
-        auto files = ScriptComponent::GetScriptsInFolder("../res/scripts/");
+        auto files = ScriptComponent::GetScriptsInFolder(ASSETS("scripts"));
         for (auto &file : files)
         {
             loadedScripts.push_back(std::make_unique<ScriptComponent>(lua, file));
@@ -150,10 +152,10 @@ int main(void)
 
     // Create and compile our GLSL program from the shaders
     //GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
-    GLuint programID = Utils::LoadSPIRV("../res/shaders/StandardShader.vert.spv", "../res/shaders/StandardShader.frag.spv");
+    GLuint programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
 
     {
-        DefaultModelConfig.fileName = "../res/cube.obj";
+        DefaultModelConfig.fileName = ASSETS("cube.obj");
         DefaultModelConfig.prog = &programID;
         DefaultModelConfig.View = &View;
         DefaultModelConfig.camera = &camera.projection;
@@ -161,7 +163,7 @@ int main(void)
     }
 
     Object cube;
-    cube.AddModels("../res/cube.obj");
+    //cube.AddModels("../res/cube.obj");
 
     float lastTime = 0.0f;
 

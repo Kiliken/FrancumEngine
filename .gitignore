@@ -47,5 +47,5 @@
 /[Dd]ep/
 /[Bb]uild/
 !/[Rr]es/[Ee]mbed/*.o
-/[Rr]es/[Ss]haders/[Ss]haderTools/
+/[Tt]ools/[Bb]in/
 /[Ss]etup/[Ee]xternal/
