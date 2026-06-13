@@ -40,7 +40,7 @@ add_executable(Francum
 	dep/include/imgui/imgui_demo.cpp
 	
 	# ImGui backends
-	dep/include/imgui/imgui_impl_glfw.cpp
+	dep/include/imgui/imgui_impl_sdl3.cpp
     dep/include/imgui/imgui_impl_opengl3.cpp
 	
 	build/resources.rc
@@ -74,7 +74,7 @@ target_link_libraries(Francum PRIVATE
 	uuid
 	odbc32
 	odbccp32
-	glfw3dll
+	SDL3.dll
 	lua
 )
 

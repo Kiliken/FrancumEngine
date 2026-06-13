@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>

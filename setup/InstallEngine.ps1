@@ -8,7 +8,8 @@ New-Item -Path "$($ProjectRoot)\dep\include\sol" -ItemType Directory
 New-Item -Path "$($ProjectRoot)\dep\lib" -ItemType Directory
 New-Item -Path "$($PSScriptRoot)\external" -ItemType Directory
 
-$glfwDownloadUrl = "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.WIN64.zip"
+# $glfwDownloadUrl = "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.WIN64.zip"
+$sdlDownloadUrl = "https://github.com/libsdl-org/SDL/releases/download/release-3.4.10/SDL3-devel-3.4.10-mingw.zip"
 # $glewDownloadUrl = "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
 $glmDownloadUrl = "https://github.com/g-truc/glm/releases/download/1.0.2/glm-1.0.2.zip"
 $imguiDownloadUrl = "https://github.com/ocornut/imgui/archive/refs/tags/v1.92.5.zip"
@@ -17,9 +18,9 @@ $imguiDownloadUrl = "https://github.com/ocornut/imgui/archive/refs/tags/v1.92.5.
 
 
 # Downloads
-if ( -not (Test-Path "$($PSScriptRoot)\glfw.zip")){
-	Write-Output "[openGL-portable-setup] Downloading GLFW..."
-	curl.exe -L "$glfwDownloadUrl" -o "$($PSScriptRoot)\glfw.zip" --progress-bar
+if ( -not (Test-Path "$($PSScriptRoot)\sdl.zip")){
+	Write-Output "[openGL-portable-setup] Downloading SDL3..."
+	curl.exe -L "$sdlDownloadUrl" -o "$($PSScriptRoot)\sdl.zip" --progress-bar
 }
 # Write-Output "[openGL-portable-setup] Downloading GLEW..."
 # curl.exe -L "$glewDownloadUrl" -o "$($PSScriptRoot)\glew.zip" --progress-bar
@@ -40,8 +41,8 @@ if ( -not (Test-Path "$($PSScriptRoot)\imgui.zip")){
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 # Extract
-Write-Output "[openGL-portable-setup] Extracting GLFW..."
-[System.IO.Compression.ZipFile]::ExtractToDirectory("$($PSScriptRoot)\glfw.zip", "$($PSScriptRoot)")
+Write-Output "[openGL-portable-setup] Extracting SDL3..."
+[System.IO.Compression.ZipFile]::ExtractToDirectory("$($PSScriptRoot)\sdl.zip", "$($PSScriptRoot)")
 # Write-Output "[openGL-portable-setup] Extracting GLEW..."
 # [System.IO.Compression.ZipFile]::ExtractToDirectory("$($PSScriptRoot)\glew.zip", "$($PSScriptRoot)")
 Write-Output "[openGL-portable-setup] Extracting GLM..."
@@ -55,9 +56,11 @@ Write-Output "[openGL-portable-setup] Extracting ImGUI..."
 # Dependencies Setup
 
 # Glfw
-Copy-Item -Path "$($PSScriptRoot)\glfw-3.4.bin.WIN64\include\GLFW" -Destination "$($ProjectRoot)\dep\include" -Recurse
-Copy-Item -Path "$($PSScriptRoot)\glfw-3.4.bin.WIN64\lib-mingw-w64\*" -Destination "$($ProjectRoot)\dep\lib" -Recurse
-Copy-Item -Path "$($ProjectRoot)\dep\lib\glfw3.dll" -Destination "$($ProjectRoot)\build" -Force
+Copy-Item -Path "$($PSScriptRoot)\SDL3-3.4.10\x86_64-w64-mingw32\include\SDL3" -Destination "$($ProjectRoot)\dep\include" -Recurse
+Copy-Item -Path "$($PSScriptRoot)\SDL3-3.4.10\x86_64-w64-mingw32\bin\SDL3.dll" -Destination "$($ProjectRoot)\build" -Force
+Copy-Item -Path "$($PSScriptRoot)\SDL3-3.4.10\x86_64-w64-mingw32\lib\libSDL3.dll.a" -Destination "$($ProjectRoot)\dep\lib" -Force
+
+
 
 # Copy-Item -Path "$($PSScriptRoot)\glew-2.2.0\include\GL" -Destination "$($ProjectRoot)\dep\include" -Recurse
 
@@ -80,8 +83,8 @@ Rename-Item -Path "$($ProjectRoot)\dep\include\imgui-1.92.5" -NewName "imgui"
 Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_opengl3.cpp" -Destination "$($ProjectRoot)\dep\include\imgui"
 Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_opengl3.h" -Destination "$($ProjectRoot)\dep\include\imgui"
 Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_opengl3_loader.h" -Destination "$($ProjectRoot)\dep\include\imgui"
-Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_glfw.cpp" -Destination "$($ProjectRoot)\dep\include\imgui"
-Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_glfw.h" -Destination "$($ProjectRoot)\dep\include\imgui"
+Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_sdl3.cpp" -Destination "$($ProjectRoot)\dep\include\imgui"
+Copy-Item -Path "$($ProjectRoot)\dep\include\imgui\backends\imgui_impl_sdl3.h" -Destination "$($ProjectRoot)\dep\include\imgui"
 
 # fastgltf
 # & "$($PSScriptRoot)\GenerateLibs.bat" "fastgltf-0.9.0"
@@ -97,8 +100,7 @@ Copy-Item -Path "$($PSScriptRoot)\icon.ico" -Destination "$($ProjectRoot)\build"
 
 
 # Clean Dependencies
-# Remove-Item -Path "$($PSScriptRoot)\glew-2.2.0" -Recurse -Force
-Remove-Item -Path "$($PSScriptRoot)\glfw-3.4.bin.WIN64" -Recurse -Force
+Remove-Item -Path "$($PSScriptRoot)\SDL3-3.4.10" -Recurse -Force
 Remove-Item -Path "$($PSScriptRoot)\glm" -Recurse -Force
 
 return 0

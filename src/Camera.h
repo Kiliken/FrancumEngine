@@ -2,7 +2,7 @@
 
 #include <cstring>
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -10,13 +10,13 @@ class Camera
 {
 private:
     // window reference
-    GLFWwindow *win;
+    SDL_Window *win;
 
     // win size
     int winWidth, winHeight;
 
     // mouse Pos
-    double xpos, ypos;
+    float xpos, ypos;
     // mouse Scroll
     double scrollY = 0.0;
     // horizontal angle : toward -Z
@@ -32,7 +32,7 @@ private:
     bool tabWasDown;
 
 public:
-    Camera(GLFWwindow *mainWindow);
+    Camera(SDL_Window *mainWindow);
     ~Camera();
 
     // directions

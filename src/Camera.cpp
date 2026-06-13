@@ -1,11 +1,12 @@
 #include "Camera.h"
 
 
-Camera::Camera(GLFWwindow *mainWindow)
+Camera::Camera(SDL_Window *mainWindow)
 {
     win = mainWindow;
-    glfwGetWindowSize(win, &winWidth, &winHeight);
-    glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
+
+    SDL_GetWindowSize(win, &winWidth, &winHeight);
+    SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
 }
 
 Camera::~Camera()
@@ -14,12 +15,15 @@ Camera::~Camera()
 
 void Camera::Update(float dt)
 {
+    const bool *key_states = SDL_GetKeyboardState(NULL);
+
     if(!showUI)
     {
-        // Get mouse position
-        glfwGetCursorPos(win, &xpos, &ypos);
-        // Reset mouse position
-        glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
+        SDL_HideCursor();
+        SDL_SetWindowRelativeMouseMode(win, true);
+
+        Uint32 mouseInputs = SDL_GetMouseState(&xpos, &ypos);
+        SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
 
         horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
         verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
@@ -41,40 +45,42 @@ void Camera::Update(float dt)
     up = glm::cross(right, direction);
 
     {
-        int tabState = glfwGetKey(win, GLFW_KEY_TAB);
-
+        bool tabIsDown = key_states[SDL_SCANCODE_TAB];
         // Move forward
-        if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
+        if (key_states[SDL_SCANCODE_W])
         {
             position += direction * dt * speed;
         }
         // Move backward
-        if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS)
+        if (key_states[SDL_SCANCODE_S])
         {
             position -= direction * dt * speed;
         }
         // Strafe right
-        if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
+        if (key_states[SDL_SCANCODE_D])
         {
             position += right * dt * speed;
         }
         // Strafe left
-        if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
+        if (key_states[SDL_SCANCODE_A])
         {
             position -= right * dt * speed;
         }
-        if(tabState == GLFW_PRESS && !tabWasDown)
+        if (tabIsDown && !tabWasDown)
         {
             showUI = !showUI;
-            glfwSetInputMode(win, GLFW_CURSOR, (showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED));
-            glfwSetCursorPos(win, winWidth / 2, winHeight / 2);
+            SDL_ShowCursor();
+            SDL_SetWindowRelativeMouseMode(win, false);
+            SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
         }
-        if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        if (key_states[SDL_SCANCODE_ESCAPE])
         {
-            glfwSetWindowShouldClose(win, GLFW_TRUE);
+            SDL_Event e; 
+            e.type = SDL_EVENT_QUIT;
+            SDL_PushEvent(&e);
         }
-        
-        tabWasDown = (tabState == GLFW_PRESS);
+
+        tabWasDown = tabIsDown;
     }
 }
 
