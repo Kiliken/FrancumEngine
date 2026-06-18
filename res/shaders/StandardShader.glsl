@@ -22,7 +22,6 @@ layout(location = 12) uniform mat4 M;
 layout(location = 14) uniform vec3 LightDirection_worldspace;
 
 layout(std140, binding = 2) uniform Camera {
-	mat4 MTest;
 	mat4 V;
 	mat4 P;
 };

@@ -2,8 +2,8 @@
 
 #include "configs.h"
 
-Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos)
-    : shaders(prog), view(View), projection(camera), lightPos(lightPos)
+Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog)
+    : shaders(prog)
 {
     std::vector<glm::vec3> tempPositions = inPositions;
     std::vector<glm::vec2> tempUvs = inUvs;
@@ -95,17 +95,10 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
     glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialIDs), nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, MaterialUBO);
 
-    glGenBuffers(1, &CamUBOID);
-    glBindBuffer(GL_UNIFORM_BUFFER, CamUBOID);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBO), nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, CamUBOID);
-
     //MatrixID = glGetUniformLocation(*shaders, "P");
     //viewId = glGetUniformLocation(*shaders, "V");
     ModelMatrixID = glGetUniformLocation(*shaders, "M");
     ColorID = glGetUniformLocation(*shaders, "AlbedoColor");
-
-    light = glGetUniformLocation(*shaders, "LightDirection_worldspace");
 
     TexturesID = glGetUniformLocation(*shaders, "textures");
 
@@ -114,12 +107,12 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
 }
 
 Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices)
-    : Model(inPositions, inUvs, inNormals, inIndices, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
+    : Model(inPositions, inUvs, inNormals, inIndices, DefaultModelConfig.prog)
 {
 }
 
 Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals)
-    : Model(inPositions, inUvs, inNormals, std::vector<unsigned int>{}, DefaultModelConfig.prog, DefaultModelConfig.View, DefaultModelConfig.camera, DefaultModelConfig.lightPos)
+    : Model(inPositions, inUvs, inNormals, std::vector<unsigned int>{}, DefaultModelConfig.prog)
 {
 }
 
@@ -127,12 +120,6 @@ void Model::Update(float deltaTime, const glm::mat4 &trans)
 {
 
     transform = trans;
-
-    {
-        cam.P = *projection;
-        cam.V = *view;
-        cam.M = transform;
-    }
 }
 
 void Model::Draw()
@@ -142,16 +129,8 @@ void Model::Draw()
 
     glBindVertexArray(vao);
 
-    // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-    // glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &cam.P[0][0]);
-    // glUniformMatrix4fv(viewId, 1, GL_FALSE, &cam.V[0][0]);
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &cam.M[0][0]);
+    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &transform[0][0]);
     glUniform3f(ColorID, color.x, color.y, color.z);
-
-    glBindBuffer(GL_UNIFORM_BUFFER, CamUBOID);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &cam);
-
-    glUniform3f(light, (*lightPos).x, (*lightPos).y, (*lightPos).z);
 
     glBindBuffer(GL_UNIFORM_BUFFER, MaterialUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialIDs), &mat);
@@ -165,7 +144,7 @@ void Model::Draw()
     glActiveTexture(GL_TEXTURE0 + 2);
     glBindTexture(GL_TEXTURE_2D, SpecularTexture);
 
-    // Draw the triangles !
+    // Draw the triangles
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
@@ -187,7 +166,6 @@ void Model::Destroy()
     glDeleteBuffers(1, &elementbuffer);
     glDeleteBuffers(1, &vao);
     glDeleteBuffers(1, &MaterialUBO);
-    glDeleteBuffers(1, &CamUBOID);
     glDeleteTextures(1, &DiffuseTexture);
     glDeleteTextures(1, &NormalTexture);
     glDeleteTextures(1, &SpecularTexture);

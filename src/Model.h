@@ -32,9 +32,6 @@ struct ModelConfig
 {
     const char *fileName;
     GLuint *prog;
-    glm::mat4 *View;
-    glm::mat4 *camera;
-    glm::vec3 *lightPos;
 };
 
 extern ModelConfig DefaultModelConfig;
@@ -49,13 +46,6 @@ struct Vertex
     glm::vec3 bitangent;
 };
 
-struct CameraUBO
-{
-    glm::mat4 M;
-    glm::mat4 V;
-    glm::mat4 P;
-};
-
 struct MaterialIDs
 {
     int diffuse;
@@ -68,7 +58,7 @@ class Model
 {
 
 public:
-    Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog, glm::mat4 *View, glm::mat4 *camera, glm::vec3 *lightPos);
+    Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices, GLuint *prog);
     Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices);
     Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals);
     ~Model();
@@ -105,11 +95,8 @@ private:
     GLuint tangentbuffer;
     GLuint bitangentbuffer;
 
-    GLuint MatrixID;
+  
     GLuint ModelMatrixID;
-    GLuint ModelViewMatrixID;
-    GLuint viewId;
-    GLuint light;
     GLuint ColorID;
 
     // Material
@@ -122,13 +109,8 @@ private:
     GLuint SpecularTexture;
 
     // Transform
-    GLuint CamUBOID;
-    CameraUBO cam;
-
-    glm::mat4 *projection;
     glm::mat4 transform;
-    glm::mat4 *view;
-    glm::vec3 *lightPos;
+
 
     // External
     GLuint *shaders;

@@ -153,13 +153,13 @@ int main(void)
     // Create and compile our GLSL program from the shaders
     //GLuint programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
     GLuint programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
+    
+    camera.BindToShader();
+    GLuint lightID = glGetUniformLocation(programID, "LightDirection_worldspace");
 
     {
         DefaultModelConfig.fileName = ASSETS("cube.obj");
         DefaultModelConfig.prog = &programID;
-        DefaultModelConfig.View = &View;
-        DefaultModelConfig.camera = &camera.projection;
-        DefaultModelConfig.lightPos = &lightPos;
     }
 
     Object cube;
@@ -292,6 +292,11 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glBindBuffer(GL_UNIFORM_BUFFER, camera.UBOID);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &camera.UBOdata);
+
+        glUniform3f(lightID, lightPos.x, lightPos.y, lightPos.z);
+
         cube.Draw();
 
         // LuaScript Draw
@@ -310,6 +315,7 @@ int main(void)
         glfwPollEvents();
     }
 
+    glDeleteBuffers(1, &lightID);
     glDeleteProgram(programID);
 
     // ImGui Cleanup
