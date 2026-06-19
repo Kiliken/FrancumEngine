@@ -3,7 +3,7 @@
 
 :FileCheck
 if not exist "%localappdata%/w64devkit" goto InstallGcc
-if not exist "%localappdata%/lua-5.3.4" goto InstallLua
+if not exist "%localappdata%/LuaJIT-2.1" goto InstallLua
 if exist "%cd%/dep" goto ExitProgram
 
 

@@ -136,7 +136,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     cubeScale = 1.f;
 
     // Initiate Lua Scripting
-    lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os);
+    lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit);
     ScriptComponent::BindFunctions(lua);
     ScriptComponent::SetupConstants(lua);
     lua["FEngine"] = lua.create_table();

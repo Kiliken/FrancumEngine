@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add Defines
 add_compile_definitions(
     RELEASE
+	SOL_ALL_SAFETIES_ON=1 
+    SOL_LUAJIT=1
 )
 
 
@@ -51,14 +53,14 @@ add_executable(Francum
 target_include_directories(Francum PRIVATE 
     src 
     dep/include
-	"$ENV{LOCALAPPDATA}/lua-5.3.4/src"
+	"$ENV{LOCALAPPDATA}/LuaJIT-2.1/src"
 )
 
 # Link Directories
 target_link_directories(Francum PRIVATE 
     src 
     dep/lib
-	"$ENV{LOCALAPPDATA}/lua-5.3.4/src"
+	"$ENV{LOCALAPPDATA}/LuaJIT-2.1/src"
 )
 
 # Link Libraries
@@ -75,7 +77,7 @@ target_link_libraries(Francum PRIVATE
 	odbc32
 	odbccp32
 	SDL3.dll
-	lua
+	lua51
 )
 
 

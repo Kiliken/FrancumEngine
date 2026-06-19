@@ -77,6 +77,7 @@ Copy-Item -Path "$($PSScriptRoot)\common\khrplatform.h" -Destination "$($Project
 Copy-Item -Path "$($PSScriptRoot)\common\sol.hpp" -Destination "$($ProjectRoot)\dep\include\sol" -Force
 Copy-Item -Path "$($PSScriptRoot)\common\config.hpp" -Destination "$($ProjectRoot)\dep\include\sol" -Force
 Copy-Item -Path "$($PSScriptRoot)\common\forward.hpp" -Destination "$($ProjectRoot)\dep\include\sol" -Force
+Copy-Item -Path "$env:LOCALAPPDATA\LuaJIT-2.1\src\lua51.dll" -Destination "$($ProjectRoot)\build" -Force
 
 # ImGui
 Rename-Item -Path "$($ProjectRoot)\dep\include\imgui-1.92.5" -NewName "imgui"
