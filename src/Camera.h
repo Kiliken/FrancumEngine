@@ -2,7 +2,7 @@
 
 #include <cstring>
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -16,14 +16,13 @@ class Camera
 {
 private:
     // window reference
-    GLFWwindow *win;
+    SDL_Window *win;
 
     // win size
     int winWidth, winHeight;
 
     // mouse Pos
-    double xpos, ypos;
-
+    float xpos, ypos;
     // view
     glm::mat4 view = glm::lookAt(
         glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
@@ -46,7 +45,7 @@ private:
     bool tabWasDown;
 
 public:
-    Camera(GLFWwindow *mainWindow);
+    Camera(SDL_Window *mainWindow);
     ~Camera();
 
     // directions
@@ -69,7 +68,6 @@ public:
 
     void Update(float dt);
     void BindToShader();
-
     void resizeView(int w, int h);
     void SetPosition(const float &x, const float &y, const float &z);
     void SetRotation(const float &x, const float &y);
