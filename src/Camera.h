@@ -6,6 +6,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+struct CameraUBO
+{
+    glm::mat4 V;
+    glm::mat4 P;
+};
+
 class Camera
 {
 private:
@@ -17,6 +23,13 @@ private:
 
     // mouse Pos
     float xpos, ypos;
+    // view
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
+        glm::vec3(0, 0, 0), // and looks at the origin
+        glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+    );
+
     // mouse Scroll
     double scrollY = 0.0;
     // horizontal angle : toward -Z
@@ -49,8 +62,12 @@ public:
     float FoV;
     bool isPerspective = true;
 
+    GLuint UBOID;
+    CameraUBO UBOdata;
+
 
     void Update(float dt);
+    void BindToShader();
     void resizeView(int w, int h);
     void SetPosition(const float &x, const float &y, const float &z);
     void SetRotation(const float &x, const float &y);

@@ -11,6 +11,7 @@ Camera::Camera(SDL_Window *mainWindow)
 
 Camera::~Camera()
 {
+    glDeleteBuffers(1, &UBOID);
 }
 
 void Camera::Update(float dt)
@@ -56,6 +57,15 @@ void Camera::Update(float dt)
         {
             position -= direction * dt * speed;
         }
+        if (key_states[SDL_SCANCODE_E])
+        {
+            position += up * dt * speed;
+        }
+        // Move Down left
+        if (key_states[SDL_SCANCODE_Q])
+        {
+            position -= up * dt * speed;
+        }
         // Strafe right
         if (key_states[SDL_SCANCODE_D])
         {
@@ -82,6 +92,23 @@ void Camera::Update(float dt)
 
         tabWasDown = tabIsDown;
     }
+
+    view = glm::lookAt(
+        position,             // Camera is here
+        position + direction, // and looks here : at the same position, plus "direction"
+        up                    // Head is up (set to 0,-1,0 to look upside-down)
+    );
+
+    UBOdata.P = projection;
+    UBOdata.V = view;
+}
+
+void Camera::BindToShader()
+{
+    glGenBuffers(1, &UBOID);
+    glBindBuffer(GL_UNIFORM_BUFFER, UBOID);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBO), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOID);
 }
 
 void Camera::resizeView(int w, int h) {

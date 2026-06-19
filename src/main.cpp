@@ -48,7 +48,7 @@ static SDL_Window *window = NULL;
 static SDL_GLContext glctx = NULL;
 
 static sol::state lua;
-std::vector<std::unique_ptr<ScriptComponent>> loadedScripts; 
+std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
 
 static Inputs *inputs = NULL;
 static Camera *camera = NULL;
@@ -64,7 +64,8 @@ float cubeScale;
 // Render Variables
 glm::mat4 View;
 GLuint programID;
-float lastTime = 0.0f;
+GLuint lightID;
+Uint64 lastTime = 0;
 Object cube;
 
 /* This function runs once at startup. */
@@ -82,7 +83,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 
     /* Create the window */
-    window = SDL_CreateWindow("Around The World", 1280, 800, window_flags);
+    window = SDL_CreateWindow("Francum Engine", 1280, 800, window_flags);
 
     if (!window)
     {
@@ -99,7 +100,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     SDL_ShowWindow(window);
 
     float main_scale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(window));
-    if (main_scale <= 0.0f) main_scale = 1.0f; // Safety fallback
+    if (main_scale <= 0.0f)
+        main_scale = 1.0f; // Safety fallback
 
     int version = gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
     if (version == 0)
@@ -146,7 +148,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     // Initialize Inputs
     inputs = new Inputs(window);
 
-
     lua["FEngine"]["Inputs"] = inputs;
     lua["FEngine"]["Camera"] = camera;
 
@@ -182,15 +183,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     // programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
     programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
 
+    camera->BindToShader();
+    lightID = glGetUniformLocation(programID, "LightDirection_worldspace");
+
     {
         DefaultModelConfig.fileName = ASSETS("cube.obj");
         DefaultModelConfig.prog = &programID;
-        DefaultModelConfig.View = &View;
-        DefaultModelConfig.camera = &camera->projection;
-        DefaultModelConfig.lightPos = &lightPos;
     }
 
-    // cube.AddModels("../res/cube.obj");
+    cube.AddModels("../res/cube.obj");
 
     // LuaScript Start
     for (auto &script : loadedScripts)
@@ -234,7 +235,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     // Delta Time
     const Uint64 currentTime = SDL_GetPerformanceCounter();
-    float deltaTime = (float)(currentTime - lastTime) / (float)SDL_GetPerformanceFrequency();
+    float deltaTime = (double)(currentTime - lastTime) / (double)SDL_GetPerformanceFrequency();
     lastTime = currentTime;
 
     camera->Update(deltaTime);
@@ -337,6 +338,11 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glBindBuffer(GL_UNIFORM_BUFFER, camera->UBOID);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &camera->UBOdata);
+
+    glUniform3f(lightID, lightPos.x, lightPos.y, lightPos.z);
+
     cube.Draw();
 
     // LuaScript Draw
@@ -369,7 +375,11 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     delete (inputs);
     inputs = nullptr;
 
+    delete (camera);
+    camera = nullptr;
+
     glDeleteProgram(programID);
+    glDeleteBuffers(1, &lightID);
 
     if (menuFlags & (1ULL << 1)) // Fast Reload Flag Check
     {
