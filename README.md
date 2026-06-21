@@ -6,7 +6,7 @@
 
 Francum Engine is built for developers who want to start creating immediately. It is "Frankly Portable"—the repository comes pre-bundled with its own toolchain (Compiler, Build System, and Scripting), meaning you can build and run games on any Windows machine without installing external software.
 
-<a href="https://www.youtube.com/watch?v=f9MxPtcVE4Y" target="_blank" >
+<a href="https://www.youtube.com/watch?v=2Jgt69h8ZdM" target="_blank" >
 
 ![YTThumbnail](videoPreview.jpg)
 
@@ -16,7 +16,7 @@ Francum Engine is built for developers who want to start creating immediately. I
 
 ## 🚀 Features
 * **Lightweight:** Minimal memory footprint and fast startup times.
-* **Portable:** Includes pre-configured `g++`, `CMake`, and `Lua`. Just clone and code.
+* **Portable:** Includes pre-configured `g++`, `CMake`, and `LuaJIT`. Just clone and code.
 * **OpenGL Powered:** Leverages modern OpenGL for efficient rendering.
 * **Frank Design:** Transparent API with no hidden "magic" behaviors.
 
@@ -30,7 +30,7 @@ Francum Engine is built for developers who want to start creating immediately. I
 
 ### Dependencies
 Francum relies on the following libraries:
-* **Windowing/Context:** GLFW
+* **Windowing/Context:** SDL3
 * **Linker/Loader:** GLAD
 * **Math:** GLM
 * **UI:** ImGui
@@ -43,16 +43,6 @@ Francum relies on the following libraries:
 2. **Run Setup**: Navigate to the project root and run `SetupProject.bat`. This handles the portable toolchain configuration automatically.
 
 3. **Open & Build**: Open the folder in **VS Code** and press `Ctrl + Shift + B` to compile the engine.
-
----
-
-## 📑 Documentation
-WIP
-
----
-
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request or open an issue for bug reports and feature requests.
 
 ---
 
