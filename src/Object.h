@@ -20,8 +20,13 @@ public:
     Object();
     ~Object();
 
+public:
+
+    bool toDelete = false;
+
     void Update(float deltaTime);
     void Draw();
+    void Destroy();
 
     void Transform(const glm::mat4 &transform);
     void SetPosition(const float &x, const float &y, const float &z);
@@ -32,11 +37,13 @@ public:
 
     Model *GetModel(int index);
 
+
 private:
     glm::mat4 transform;
     glm::vec3 localPos;
     glm::vec3 localRot;
     glm::vec3 localScale;
+    bool updateTransform = false;
 
-    std::vector<Model> models;
+    std::vector<Model*> models;
 };

@@ -10,9 +10,10 @@ Object::Object()
 
 Object::~Object()
 {
-    for (Model &model : models)
+    for (Model *model : models)
     {
-        model.Destroy();
+        model->Destroy();
+        delete model;
     }
 
     models.clear();
@@ -37,6 +38,7 @@ bool Object::AddModels(const char *path)
 
 void Object::Update(float deltaTime)
 {
+    if(!updateTransform) return;
 
     transform = glm::mat4(1.0f);
     transform = glm::translate(transform, localPos);
@@ -46,19 +48,26 @@ void Object::Update(float deltaTime)
     transform = glm::scale(transform, localScale);
 
     // call the models update
-    for (Model &model : models)
+    for (Model *model : models)
     {
-        model.Update(deltaTime, transform);
+        model->Update(deltaTime, transform);
     }
+
+    updateTransform = false;
 }
 
 void Object::Draw()
 {
     // call the models draw
-    for (Model &model : models)
+    for (Model *model : models)
     {
-        model.Draw();
+        model->Draw();
     }
+}
+
+void Object::Destroy()
+{
+    toDelete = true;
 }
 
 // Transform Stuff
@@ -70,19 +79,22 @@ void Object::Transform(const glm::mat4 &trans)
 void Object::SetPosition(const float &x, const float &y, const float &z)
 {
     localPos = glm::vec3(x, y, z);
+    updateTransform = true;
 }
 
 void Object::SetRotation(const float &x, const float &y, const float &z)
 {
     localRot = glm::radians(glm::vec3(x, y, z));
+    updateTransform = true;
 }
 
 void Object::SetScale(const float &x, const float &y, const float &z)
 {
     localScale = glm::vec3(x, y, z);
+    updateTransform = true;
 }
 
 Model *Object::GetModel(int index)
 {
-    return &models[index];
+    return models[index];
 }

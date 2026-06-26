@@ -16,7 +16,7 @@ const char* Utils::getTexturePath(cgltf_texture* tex)
 }
 
 
-bool Utils::loadGlTf(const char *path, std::vector<Model> &models)
+bool Utils::loadGlTf(const char *path, std::vector<Model*> &models)
 {
     cgltf_options options = {};
     cgltf_data *data = nullptr;
@@ -100,7 +100,7 @@ bool Utils::loadGlTf(const char *path, std::vector<Model> &models)
                 }
             }
 
-            models.emplace_back(positions, uvs, normals, indices);
+            models.emplace_back(new Model(positions, uvs, normals, indices));
 
             cgltf_material *mat = prim->material;
 
@@ -108,21 +108,21 @@ bool Utils::loadGlTf(const char *path, std::vector<Model> &models)
             if (mat && mat->pbr_metallic_roughness.base_color_texture.texture){
                 const char* url = getTexturePath(mat->pbr_metallic_roughness.base_color_texture.texture);
                 if(url != nullptr)
-                    models.back().SetTexture(url);
+                    models.back()->SetTexture(url);
             }
 
             // Normal
             if (mat && mat->normal_texture.texture){
                 const char* url = getTexturePath(mat->normal_texture.texture);
                 if(url != nullptr)
-                    models.back().SetNormalMap(url);
+                    models.back()->SetNormalMap(url);
             }
 
             // Specular
             if (mat && mat->pbr_metallic_roughness.metallic_roughness_texture.texture){
                 const char* url = getTexturePath(mat->pbr_metallic_roughness.metallic_roughness_texture.texture);
                 if(url != nullptr)
-                    models.back().SetSpecularMap(url);
+                    models.back()->SetSpecularMap(url);
             }
         }
     }
@@ -133,7 +133,7 @@ bool Utils::loadGlTf(const char *path, std::vector<Model> &models)
 
 bool Utils::loadOBJ(
     const char *path,
-    std::vector<Model> &models)
+    std::vector<Model*> &models)
 {
 
     std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
@@ -218,7 +218,7 @@ bool Utils::loadOBJ(
                     out_normals.push_back(temp_normals[ni - 1]);
                 }
 
-                models.emplace_back(out_vertices, out_uvs, out_normals);
+                models.emplace_back(new Model(out_vertices, out_uvs, out_normals));
 
                 // New Object
                 vertexIndices.clear();
@@ -254,7 +254,7 @@ bool Utils::loadOBJ(
         out_normals.push_back(normal);
     }
 
-    models.emplace_back(out_vertices, out_uvs, out_normals);
+    models.emplace_back(new Model(out_vertices, out_uvs, out_normals));
     fclose(file);
 
     return true;

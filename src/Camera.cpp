@@ -28,6 +28,10 @@ void Camera::Update(float dt)
 
         horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
         verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
+
+        // Clamp camera vertically to prevent flips
+        if (verticalAngle > 1.55f)  verticalAngle = 1.55f;
+        if (verticalAngle < -1.55f) verticalAngle = -1.55f;
     }
 
     // Direction : Spherical coordinates to Cartesian coordinates conversion
@@ -38,9 +42,9 @@ void Camera::Update(float dt)
 
     // Right vector
     right = glm::vec3(
-        sin(horizontalAngle - 3.14f / 2.0f),
+        sin(horizontalAngle - 1.5707f),
         0,
-        cos(horizontalAngle - 3.14f / 2.0f));
+        cos(horizontalAngle - 1.5707f));
 
     // Up vector : perpendicular to both direction and right
     up = glm::cross(right, direction);

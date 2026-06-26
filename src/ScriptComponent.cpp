@@ -54,10 +54,9 @@ std::vector<std::string> ScriptComponent::GetScriptsInFolder(const std::string &
 void ScriptComponent::BindFunctions(sol::state &lua)
 {
     lua.new_usertype<Object>("Object",
-                             sol::constructors<
-                                 Object()>(),
                              "Update", &Object::Update,
                              "Draw", &Object::Draw,
+                             "Destroy", &Object::Destroy,
                              "AddModels", &Object::AddModels,
                              "GetModel", &Object::GetModel,
                              "SetPosition", &Object::SetPosition,

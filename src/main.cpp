@@ -34,7 +34,7 @@ extern "C"
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-static uint64_t menuFlags = 0;
+uint64_t menuFlags = 0;
 /*
 Flags:
     1 - Fast Reload
@@ -43,34 +43,41 @@ Flags:
 
 ModelConfig DefaultModelConfig;
 
-// SDL Public Variables
-static SDL_Window *window = NULL;
-static SDL_GLContext glctx = NULL;
+struct EngineContext
+{
+    // SDL Public Variables
+    SDL_Window *window;
+    SDL_GLContext glctx;
 
-static sol::state lua;
-std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
+    sol::state lua;
+    std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
 
-static Inputs *inputs = NULL;
-static Camera *camera = NULL;
+    Inputs *inputs;
+    Camera *camera;
+    std::vector<Object *> objects;
 
-// UI Variables
-int winWidth, winHeight;
-ImVec4 clear_color;
-glm::vec3 lightPos;
-glm::vec3 cubePos;
-glm::vec3 cubeRot;
-float cubeScale;
+    // UI Variables
+    int winWidth, winHeight;
+    ImVec4 clear_color;
+    glm::vec3 lightPos;
+    glm::vec3 cubePos;
+    glm::vec3 cubeRot;
+    float cubeScale;
 
-// Render Variables
-glm::mat4 View;
-GLuint programID;
-GLuint lightID;
-Uint64 lastTime = 0;
-Object cube;
+    // Render Variables
+    glm::mat4 View;
+    GLuint programID;
+    GLuint lightID;
+    Uint64 lastTime = 0;
+    Object *cube;
+};
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
+    EngineContext *engine = new EngineContext();
+    *appstate = engine;
+
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -83,23 +90,23 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 
     /* Create the window */
-    window = SDL_CreateWindow("Francum Engine", 1280, 800, window_flags);
+    engine->window = SDL_CreateWindow("Francum Engine", 1280, 800, window_flags);
 
-    if (!window)
+    if (!engine->window)
     {
         SDL_Log("Couldn't create window and renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
     /* Manage OpenGL context*/
-    glctx = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, glctx);
+    engine->glctx = SDL_GL_CreateContext(engine->window);
+    SDL_GL_MakeCurrent(engine->window, engine->glctx);
 
     SDL_GL_SetSwapInterval(1); // Enable vsync
-    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    SDL_ShowWindow(window);
+    SDL_SetWindowPosition(engine->window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    SDL_ShowWindow(engine->window);
 
-    float main_scale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(window));
+    float main_scale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindow(engine->window));
     if (main_scale <= 0.0f)
         main_scale = 1.0f; // Safety fallback
 
@@ -125,45 +132,51 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     style.ScaleAllSizes(main_scale); // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
     style.FontScaleDpi = main_scale; // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
 
-    ImGui_ImplSDL3_InitForOpenGL(window, glctx);
+    ImGui_ImplSDL3_InitForOpenGL(engine->window, engine->glctx);
     ImGui_ImplOpenGL3_Init("#version 460");
 
     // UI Variables
-    clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    lightPos = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
-    cubePos = glm::vec3(0.0f);
-    cubeRot = glm::vec3(0.0f);
-    cubeScale = 1.f;
+    engine->clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    engine->lightPos = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+    engine->cubePos = glm::vec3(0.0f);
+    engine->cubeRot = glm::vec3(0.0f);
+    engine->cubeScale = 1.f;
 
     // Initiate Lua Scripting
-    lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit);
-    ScriptComponent::BindFunctions(lua);
-    ScriptComponent::SetupConstants(lua);
-    lua["FEngine"] = lua.create_table();
-    lua.script("print('[Sol3] Lua Scripting Loaded')");
+    engine->lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit);
+    ScriptComponent::BindFunctions(engine->lua);
+    ScriptComponent::SetupConstants(engine->lua);
+    engine->lua["FEngine"] = engine->lua.create_table();
+    engine->lua.script("print('[Sol3] Lua Scripting Loaded')");
 
     // Initialize Camera
-    camera = new Camera(window);
+    engine->camera = new Camera(engine->window);
 
     // Initialize Inputs
-    inputs = new Inputs(window);
+    engine->inputs = new Inputs(engine->window);
 
-    lua["FEngine"]["Inputs"] = inputs;
-    lua["FEngine"]["Camera"] = camera;
+    engine->lua["FEngine"]["Inputs"] = engine->inputs;
+    engine->lua["FEngine"]["Camera"] = engine->camera;
+    engine->lua["FEngine"]["NewObject"] = [engine]()
+    {
+        Object *newObj = new Object();
+        engine->objects.push_back(newObj);
+        return newObj;
+    };
 
     // Load Scripts
     {
         auto files = ScriptComponent::GetScriptsInFolder(ASSETS("scripts"));
         for (auto &file : files)
         {
-            loadedScripts.push_back(std::make_unique<ScriptComponent>(lua, file));
+            engine->loadedScripts.push_back(std::make_unique<ScriptComponent>(engine->lua, file));
         }
     }
 
-    SDL_GetWindowSize(window, &winWidth, &winHeight);
+    SDL_GetWindowSize(engine->window, &engine->winWidth, &engine->winHeight);
 
     // Dark blue background
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    glClearColor(engine->clear_color.x * engine->clear_color.w, engine->clear_color.y * engine->clear_color.w, engine->clear_color.z * engine->clear_color.w, engine->clear_color.w);
 
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
@@ -173,7 +186,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     glEnable(GL_CULL_FACE);
 
     // Camera matrix
-    View = glm::lookAt(
+    engine->View = glm::lookAt(
         glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
         glm::vec3(0, 0, 0), // and looks at the origin
         glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
@@ -181,20 +194,24 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     // Create and compile our GLSL program from the shaders
     // programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
-    programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
+    engine->programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
 
-    camera->BindToShader();
-    lightID = glGetUniformLocation(programID, "LightDirection_worldspace");
+    engine->camera->BindToShader();
+    engine->lightID = glGetUniformLocation(engine->programID, "LightDirection_worldspace");
 
     {
         DefaultModelConfig.fileName = ASSETS("cube.obj");
-        DefaultModelConfig.prog = &programID;
+        DefaultModelConfig.prog = &engine->programID;
     }
 
-    cube.AddModels("../res/cube.obj");
+    engine->cube = new Object;
+
+    engine->cube->AddModels("../res/cube.obj");
+
+    engine->lastTime = SDL_GetPerformanceCounter();
 
     // LuaScript Start
-    for (auto &script : loadedScripts)
+    for (auto &script : engine->loadedScripts)
         script->Start();
 
     return SDL_APP_CONTINUE;
@@ -203,8 +220,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 /* This function runs when a new event (mouse input, keypresses, etc) occurs. */
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 {
+    EngineContext *engine = static_cast<EngineContext *>(appstate);
 
-    if (camera->showUI)
+    if (engine->camera->showUI)
     {
         ImGui_ImplSDL3_ProcessEvent(event);
     }
@@ -219,26 +237,31 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 /* This function runs once per frame, and is the heart of the program. */
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    EngineContext *engine = static_cast<EngineContext *>(appstate);
+
+    glClearColor(engine->clear_color.x * engine->clear_color.w, engine->clear_color.y * engine->clear_color.w, engine->clear_color.z * engine->clear_color.w, engine->clear_color.w);
 
     // Resize Window
     int w, h;
-    SDL_GetWindowSizeInPixels(window, &w, &h);
-    if (w != winWidth || h != winHeight)
+    SDL_GetWindowSizeInPixels(engine->window, &w, &h);
+    if (w != engine->winWidth || h != engine->winHeight)
     {
-        winWidth = w;
-        winHeight = h;
+        engine->winWidth = w;
+        engine->winHeight = h;
 
-        glViewport(0, 0, winWidth, winHeight);
-        camera->resizeView(winWidth, winHeight);
+        glViewport(0, 0, engine->winWidth, engine->winHeight);
+        engine->camera->resizeView(engine->winWidth, engine->winHeight);
     }
 
     // Delta Time
     const Uint64 currentTime = SDL_GetPerformanceCounter();
-    float deltaTime = (double)(currentTime - lastTime) / (double)SDL_GetPerformanceFrequency();
-    lastTime = currentTime;
+    float deltaTime = (double)(currentTime - engine->lastTime) / (double)SDL_GetPerformanceFrequency();
+    engine->lastTime = currentTime;
 
-    camera->Update(deltaTime);
+    if (deltaTime > 0.1f)
+        deltaTime = 0.1f;
+
+    engine->camera->Update(deltaTime);
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
@@ -246,7 +269,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     ImGui::NewFrame();
     ImGuiIO &io = ImGui::GetIO();
 
-    ImGui::SetMouseCursor((camera->showUI ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None));
+    ImGui::SetMouseCursor((engine->camera->showUI ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None));
 
     // Main Menu
     if (ImGui::BeginMainMenuBar())
@@ -296,64 +319,77 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         ImGui::EndMainMenuBar();
     }
 
-    if (camera->showUI)
+    if (engine->camera->showUI)
     {
 
         // Standard Window
         ImGui::Begin("Francum Engine");
 
         ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
-        ImGui::DragFloat3("Light Direction", glm::value_ptr(lightPos));
+        ImGui::DragFloat3("Light Direction", glm::value_ptr(engine->lightPos));
 
-        ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a colorwd
+        ImGui::ColorEdit3("clear color", (float *)&engine->clear_color); // Edit 3 floats representing a colorwd
 
         ImGui::Text("Cube Transform");
-        ImGui::DragFloat3("Cube Pos", glm::value_ptr(cubePos));
-        ImGui::DragFloat3("Cube Rot", glm::value_ptr(cubeRot));
-        ImGui::SliderFloat("Cube Scale", // The text label for the slider
-                           &cubeScale,   // Address of the variable to link
-                           0.0f,         // Minimum value (v_min)
-                           10.0f,        // Maximum value (v_max)
-                           "%.1f");      // Display format (e.g., one decimal place)
+        ImGui::DragFloat3("Cube Pos", glm::value_ptr(engine->cubePos));
+        ImGui::DragFloat3("Cube Rot", glm::value_ptr(engine->cubeRot));
+        ImGui::SliderFloat("Cube Scale",       // The text label for the slider
+                           &engine->cubeScale, // Address of the variable to link
+                           0.0f,               // Minimum value (v_min)
+                           10.0f,              // Maximum value (v_max)
+                           "%.1f");            // Display format (e.g., one decimal place)
         ImGui::End();
     }
 
-    cube.SetPosition(cubePos.x, cubePos.y, cubePos.z);
-    cube.SetRotation(cubeRot.x, cubeRot.y, cubeRot.z);
-    cube.SetScale(cubeScale, cubeScale, cubeScale);
+    engine->cube->SetPosition(engine->cubePos.x, engine->cubePos.y, engine->cubePos.z);
+    engine->cube->SetRotation(engine->cubeRot.x, engine->cubeRot.y, engine->cubeRot.z);
+    engine->cube->SetScale(engine->cubeScale, engine->cubeScale, engine->cubeScale);
 
     // Camera matrix
-    View = glm::lookAt(
-        camera->position,                     // Camera is here
-        camera->position + camera->direction, // and looks here : at the same position, plus "direction"
-        camera->up                            // Head is up (set to 0,-1,0 to look upside-down)
+    engine->View = glm::lookAt(
+        engine->camera->position,                             // Camera is here
+        engine->camera->position + engine->camera->direction, // and looks here : at the same position, plus "direction"
+        engine->camera->up                                    // Head is up (set to 0,-1,0 to look upside-down)
     );
 
-    cube.Update(deltaTime);
+    engine->cube->Update(deltaTime);
 
     // LuaScript Update
-    for (auto &script : loadedScripts)
+    for (auto &script : engine->loadedScripts)
         script->Update(deltaTime);
 
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, camera->UBOID);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &camera->UBOdata);
+    glBindBuffer(GL_UNIFORM_BUFFER, engine->camera->UBOID);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &engine->camera->UBOdata);
 
-    glUniform3f(lightID, lightPos.x, lightPos.y, lightPos.z);
+    glUniform3f(engine->lightID, engine->lightPos.x, engine->lightPos.y, engine->lightPos.z);
 
-    cube.Draw();
+    engine->cube->Draw();
 
     // LuaScript Draw
-    for (auto &script : loadedScripts)
+    for (auto &script : engine->loadedScripts)
         script->Draw();
 
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    SDL_GL_SwapWindow(window);
+    auto it = engine->objects.begin();
+    while (it != engine->objects.end())
+    {
+        Object *obj = *it;
+
+        if (obj->toDelete)
+        {
+            delete obj;
+            it = engine->objects.erase(it);
+        }
+        else {++it;}
+    }
+
+    SDL_GL_SwapWindow(engine->window);
 
     return SDL_APP_CONTINUE;
 }
@@ -361,25 +397,28 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 /* This function runs once at shutdown. */
 void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
-
-    SDL_DestroyWindow(window);
-    window = nullptr;
-
-    SDL_GL_DestroyContext(glctx);
-    glctx = nullptr;
+    if (!appstate)
+        return; // No Engine Context Found
+    EngineContext *engine = static_cast<EngineContext *>(appstate);
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    delete (inputs);
-    inputs = nullptr;
+    glDeleteProgram(engine->programID);
+    glDeleteBuffers(1, &engine->lightID);
 
-    delete (camera);
-    camera = nullptr;
+    for (Object *obj : engine->objects)
+    {
+        delete obj;
+    }
+    delete engine->inputs;
+    delete engine->camera;
 
-    glDeleteProgram(programID);
-    glDeleteBuffers(1, &lightID);
+    SDL_DestroyWindow(engine->window);
+    SDL_GL_DestroyContext(engine->glctx);
+
+    delete engine;
 
     if (menuFlags & (1ULL << 1)) // Fast Reload Flag Check
     {

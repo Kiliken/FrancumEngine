@@ -11,10 +11,12 @@ function OnStart()
     print("Script started!")
 	
 	-- Initialize objects
-    cube = Object.new()
-	suzanne = Object.new()
-	house = Object.new()
-	terrain = Object.new()
+    cube = FEngine.NewObject()
+	suzanne = FEngine.NewObject()
+	house = FEngine.NewObject()
+	terrain = FEngine.NewObject()
+
+	local testObj = FEngine.NewObject()
 
 	cube:AddModels("../res/cube.obj")
 	suzanne:AddModels("../res/DamagedHelmet.gltf")
@@ -37,6 +39,8 @@ function OnStart()
 	house:SetRotation(0,65,0)
 	
 	terrain:SetScale(3,1,3)
+
+	testObj:Destroy()
 	
 	-- FEngine.Camera:SetProjMode("ORTHO")
 end
