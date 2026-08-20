@@ -52,9 +52,9 @@ struct EngineContext
     sol::state lua;
     std::vector<std::unique_ptr<ScriptComponent>> loadedScripts;
 
-    Inputs *inputs;
-    Camera *camera;
-    std::vector<Object *> objects;
+    std::unique_ptr<Inputs> inputs;
+    std::unique_ptr<Camera> camera;
+    std::vector<std::unique_ptr<Object>> objects;
 
     // UI Variables
     int winWidth, winHeight;
@@ -150,18 +150,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->lua.script("print('[Sol3] Lua Scripting Loaded')");
 
     // Initialize Camera
-    engine->camera = new Camera(engine->window);
+    engine->camera = std::make_unique<Camera>(engine->window);
 
     // Initialize Inputs
-    engine->inputs = new Inputs(engine->window);
+    engine->inputs = std::make_unique<Inputs>(engine->window);
 
-    engine->lua["FEngine"]["Inputs"] = engine->inputs;
-    engine->lua["FEngine"]["Camera"] = engine->camera;
+    engine->lua["FEngine"]["Inputs"] = engine->inputs.get();
+    engine->lua["FEngine"]["Camera"] = engine->camera.get();
     engine->lua["FEngine"]["NewObject"] = [engine]()
     {
-        Object *newObj = new Object();
-        engine->objects.push_back(newObj);
-        return newObj;
+        engine->objects.push_back(std::make_unique<Object>());
+        return engine->objects.back().get();
     };
 
     // Load Scripts
@@ -379,11 +378,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     auto it = engine->objects.begin();
     while (it != engine->objects.end())
     {
-        Object *obj = *it;
+        Object *obj = it->get();
 
         if (obj->toDelete)
         {
-            delete obj;
             it = engine->objects.erase(it);
         }
         else {++it;}
@@ -407,13 +405,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
 
     glDeleteProgram(engine->programID);
     glDeleteBuffers(1, &engine->lightID);
-
-    for (Object *obj : engine->objects)
-    {
-        delete obj;
-    }
-    delete engine->inputs;
-    delete engine->camera;
 
     SDL_DestroyWindow(engine->window);
     SDL_GL_DestroyContext(engine->glctx);
