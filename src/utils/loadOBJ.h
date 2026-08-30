@@ -12,7 +12,7 @@
 
 
 namespace Utils{
-    const char* getTexturePath(cgltf_texture* tex);
+    const char* getTexturePath(const char *path, cgltf_texture* tex);
     bool loadGlTf(const char *path, std::vector<Model*> &models);
     bool loadOBJ(const char *path,std::vector<Model*> &models);
 }

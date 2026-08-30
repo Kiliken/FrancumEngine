@@ -173,17 +173,26 @@ void Model::Destroy()
 
 void Model::SetTexture(const char *path)
 {
-    DiffuseTexture = Utils::loadDDS(path);
+    char fullPath[512];
+    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
+
+    DiffuseTexture = Utils::loadDDS(fullPath);
 }
 
 void Model::SetNormalMap(const char *path)
 {
-    NormalTexture = Utils::loadDDS(path);
+    char fullPath[512];
+    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
+
+    NormalTexture = Utils::loadDDS(fullPath);
 }
 
 void Model::SetSpecularMap(const char *path)
 {
-    SpecularTexture = Utils::loadDDS(path);
+    char fullPath[512];
+    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
+
+    SpecularTexture = Utils::loadDDS(fullPath);
 }
 
 void Model::SetColor(const char *colorHex){

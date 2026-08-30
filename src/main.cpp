@@ -199,13 +199,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->lightID = glGetUniformLocation(engine->programID, "LightDirection_worldspace");
 
     {
-        DefaultModelConfig.fileName = ASSETS("cube.obj");
+        DefaultModelConfig.fileName = "cube.obj";
         DefaultModelConfig.prog = &engine->programID;
     }
 
     engine->cube = new Object;
 
-    engine->cube->AddModels("../res/cube.obj");
+    engine->cube->AddModels("cube.obj");
 
     engine->lastTime = SDL_GetPerformanceCounter();
 

@@ -9,6 +9,8 @@ cubePosX = 0
 
 function OnStart()
     print("Script started!")
+	FEngine.Camera:SetPosition(-1, 5, 7)
+    FEngine.Camera:SetRotation(-156, -18)
 	
 	-- Initialize objects
     cube = FEngine.NewObject()
@@ -18,19 +20,18 @@ function OnStart()
 
 	local testObj = FEngine.NewObject()
 
-	cube:AddModels("../res/cube.obj")
-	suzanne:AddModels("../res/DamagedHelmet.gltf")
-	house:AddModels("../res/house.obj")
-	terrain:AddModels("../res/plane.obj")
+	cube:AddModels("cube.obj")
+	suzanne:AddModels("DamagedHelmet.gltf")
+	house:AddModels("house.obj")
+	terrain:AddModels("plane.obj")
 	
 	-- Cube Texture Setup
-	cube:GetModel(0):SetTexture("../res/diffuse.dds")
-	cube:GetModel(0):SetNormalMap("../res/normals.dds")
-	cube:GetModel(0):SetSpecularMap("../res/specular.dds")
+	cube:GetModel(0):SetTexture("diffuse.dds")
+	cube:GetModel(0):SetNormalMap("normals.dds")
+	cube:GetModel(0):SetSpecularMap("specular.dds")
 
-	house:GetModel(0):SetTexture("../res/house.dds")
-	terrain:GetModel(0):SetTexture("../res/dirtDiffuse.dds")
-	-- terrain:GetModel(0):SetColor("0xFF0000")
+	house:GetModel(0):SetTexture("house.dds")
+	terrain:GetModel(0):SetTexture("dirtDiffuse.dds")
 	
 	suzanne:SetPosition(-3,2,0)
 	suzanne:SetRotation(0,35,0)
@@ -41,8 +42,6 @@ function OnStart()
 	terrain:SetScale(3,1,3)
 
 	testObj:Destroy()
-	
-	-- FEngine.Camera:SetProjMode("ORTHO")
 end
 
 function OnUpdate(dt)
@@ -56,15 +55,15 @@ function OnUpdate(dt)
 	local suzanneRotY = math.sin(time * speed * 0.5) * 180
 
     -- rotation
-    rotationY = rotationY + 1.5
+    rotationY = rotationY + 45 * dt
 
     
     if FEngine.Inputs:IsKeyDown(INPUT_KEY_LEFT) then
-		cubePosX = cubePosX + 1
+		cubePosX = cubePosX + 15 * dt
 	end
 
     if FEngine.Inputs:IsKeyDown(INPUT_KEY_RIGHT) then
-		cubePosX = cubePosX - 1
+		cubePosX = cubePosX - 15 * dt
 	end
 
     -- apply transforms

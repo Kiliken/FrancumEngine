@@ -4,31 +4,52 @@
 #include <cgltf.h>
 #include "configs.h"
 
-const char* Utils::getTexturePath(cgltf_texture* tex)
+const char *Utils::getTexturePath(const char *path, cgltf_texture *tex)
 {
     static char fullPath[512];
 
     if (!tex || !tex->image || !tex->image->uri)
         return nullptr;
 
-    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), tex->image->uri);
+    const char *lastSlash = strrchr(path, '/');
+
+    if (lastSlash)
+    {
+        size_t dirLen = (size_t)(lastSlash - path + 1);
+
+        if (dirLen >= sizeof(fullPath))
+            return nullptr;
+
+        memcpy(fullPath, path, dirLen);
+        fullPath[dirLen] = '\0';
+
+        strncat(fullPath, tex->image->uri, sizeof(fullPath) - strlen(fullPath) - 1);
+    }
+    else
+    {
+        // Fallback if path contains no directory separator
+        snprintf(fullPath, sizeof(fullPath), "%s", tex->image->uri);
+    }
+    
     return fullPath;
 }
 
-
-bool Utils::loadGlTf(const char *path, std::vector<Model*> &models)
+bool Utils::loadGlTf(const char *path, std::vector<Model *> &models)
 {
     cgltf_options options = {};
     cgltf_data *data = nullptr;
     cgltf_result result;
 
+    char fullPath[512];
+    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
+
     // Parse file
-    result = cgltf_parse_file(&options, path, &data);
+    result = cgltf_parse_file(&options, fullPath, &data);
     if (result != cgltf_result_success)
         return false;
 
     // Load Data
-    result = cgltf_load_buffers(&options, data, path);
+    result = cgltf_load_buffers(&options, data, fullPath);
     if (result != cgltf_result_success)
     {
         cgltf_free(data);
@@ -105,23 +126,26 @@ bool Utils::loadGlTf(const char *path, std::vector<Model*> &models)
             cgltf_material *mat = prim->material;
 
             // Diffuse
-            if (mat && mat->pbr_metallic_roughness.base_color_texture.texture){
-                const char* url = getTexturePath(mat->pbr_metallic_roughness.base_color_texture.texture);
-                if(url != nullptr)
+            if (mat && mat->pbr_metallic_roughness.base_color_texture.texture)
+            {
+                const char *url = getTexturePath(path, mat->pbr_metallic_roughness.base_color_texture.texture);
+                if (url != nullptr)
                     models.back()->SetTexture(url);
             }
 
             // Normal
-            if (mat && mat->normal_texture.texture){
-                const char* url = getTexturePath(mat->normal_texture.texture);
-                if(url != nullptr)
+            if (mat && mat->normal_texture.texture)
+            {
+                const char *url = getTexturePath(path, mat->normal_texture.texture);
+                if (url != nullptr)
                     models.back()->SetNormalMap(url);
             }
 
             // Specular
-            if (mat && mat->pbr_metallic_roughness.metallic_roughness_texture.texture){
-                const char* url = getTexturePath(mat->pbr_metallic_roughness.metallic_roughness_texture.texture);
-                if(url != nullptr)
+            if (mat && mat->pbr_metallic_roughness.metallic_roughness_texture.texture)
+            {
+                const char *url = getTexturePath(path, mat->pbr_metallic_roughness.metallic_roughness_texture.texture);
+                if (url != nullptr)
                     models.back()->SetSpecularMap(url);
             }
         }
@@ -133,8 +157,10 @@ bool Utils::loadGlTf(const char *path, std::vector<Model*> &models)
 
 bool Utils::loadOBJ(
     const char *path,
-    std::vector<Model*> &models)
+    std::vector<Model *> &models)
 {
+    char fullPath[512];
+    snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
 
     std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
     std::vector<glm::vec3> temp_vertices;
@@ -143,7 +169,7 @@ bool Utils::loadOBJ(
 
     bool firstIteration = true;
 
-    FILE *file = fopen(path, "r");
+    FILE *file = fopen(fullPath, "r");
     if (file == NULL)
     {
         printf("Impossible to open the file !\n");

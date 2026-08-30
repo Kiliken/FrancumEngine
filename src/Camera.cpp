@@ -127,8 +127,8 @@ void Camera::SetPosition(const float &x, const float &y, const float &z)
 
 void Camera::SetRotation(const float &x, const float &y)
 {
-    verticalAngle = y;
-    horizontalAngle = x;
+    verticalAngle = glm::radians(y);
+    horizontalAngle = glm::radians(x);
 }
 
 void Camera::SetProjMode(const char *mode){
