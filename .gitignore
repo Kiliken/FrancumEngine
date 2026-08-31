@@ -49,3 +49,4 @@
 !/[Rr]es/[Ee]mbed/*.o
 /[Tt]ools/[Bb]in/
 /[Ss]etup/[Ee]xternal/
+# /[Rr]es/[Mm]odels/*.dds

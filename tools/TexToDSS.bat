@@ -31,11 +31,9 @@ if "%~1"=="" (
     )
 
     :: Run the loop using the constant path
-    for /r "%ASSETS_PATH%" %%i in (*.jpg *.png) do (
-        echo Converting: %%~nxi -> %%~ni.dds
-        for %%d in ("%%~dpi.") do (
-            texconv -y -f BC3_UNORM -m 0 -o "%%~fld" "%%i"
-        )
+    for /r "%ASSETS_PATH%\textures" %%i in (*.jpg *.png) do (
+        echo Converting: %%~nxi
+        texconv -y -f R8G8B8A8_UNORM -dx10 -m 0 -o "%ASSETS_PATH%\models" "%%i"
     )
     
     echo -------------------------------------------------------
@@ -47,7 +45,7 @@ if "%~1"=="" (
 
 if not "%~1"=="" (
     echo Converting %~nx1 to DDS...
-	texconv -y -f BC3_UNORM -m 0 -o "%~dp1." "%~1"
+	texconv -y -f R8G8B8A8_UNORM -dx10 -m 0 -o "%~dp1." "%~1"
     pause
     exit
 )

@@ -1,7 +1,7 @@
 @echo off
 
 set "dxcDlUrl=https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2602/dxc_2026_02_20.zip"
-set "glsDlUrl=https://github.com/KhronosGroup/glslang/releases/download/main-tot/glslang-master-windows-Release.zip"
+set "glsDlUrl=https://github.com/KhronosGroup/glslang/releases/download/16.5.0/glslang-16.5.0-windows-x86_64-release.zip"
 
 
 :: Please delete bin directory on switching between compilers
@@ -33,7 +33,7 @@ set PATH=%~dp0bin\glslang\bin;%PATH%
 
 if "%~1"=="" (
 
-	glslangValidator --version
+	glslang --version
 	echo Drag a file in this batch file to compile it in SpirV shader
 	pause
 	exit
@@ -46,29 +46,29 @@ if not "%~1"=="" (
         echo Detected HLSL shader
 
         findstr /R "\<VSMain\>" "%~1" >nul && (
-            glslangValidator -D -S vert -e VSMain -o "%~dpn1.vert.spv" "%~1"
+            glslang -D -S vert -e VSMain -o "%~dpn1.vert.spv" "%~1"
         )
 
         findstr /R "\<PSMain\>" "%~1" >nul && (
-            glslangValidator -D -S frag -e PSMain -o "%~dpn1.frag.spv" "%~1"
+            glslang -D -S frag -e PSMain -o "%~dpn1.frag.spv" "%~1"
         )
 
         findstr /R "\<CSMain\>" "%~1" >nul && (
-            glslangValidator -D -S comp -e CSMain -G -o "%~dpn1.comp.spv" "%~1"
+            glslang -D -S comp -e CSMain -G -o "%~dpn1.comp.spv" "%~1"
         )
     ) else if /I "%~x1"==".glsl" (
         echo Detected GLSL unique shader
 
         findstr /R "\<VSMain\>" "%~1" >nul && (
-            glslangValidator -G -S vert --D VERT -e VSMain --source-entrypoint main -o "%~dpn1.vert.spv" "%~1"
+            glslang -G -S vert --D VERT -e VSMain --source-entrypoint main -o "%~dpn1.vert.spv" "%~1"
         )
 
         findstr /R "\<PSMain\>" "%~1" >nul && (
-            glslangValidator -G -S frag --D FRAG -e PSMain --source-entrypoint main -o "%~dpn1.frag.spv" "%~1"
+            glslang -G -S frag --D FRAG -e PSMain --source-entrypoint main -o "%~dpn1.frag.spv" "%~1"
         )
 
         findstr /R "\<CSMain\>" "%~1" >nul && (
-            glslangValidator -G -S comp --D COMP -e CSMain --source-entrypoint main -o "%~dpn1.comp.spv" "%~1"
+            glslang -G -S comp --D COMP -e CSMain --source-entrypoint main -o "%~dpn1.comp.spv" "%~1"
         )
     ) else (
 		echo Detected GLSL "%~x1" shader

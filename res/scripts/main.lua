@@ -21,17 +21,17 @@ function OnStart()
 	local testObj = FEngine.NewObject()
 
 	cube:AddModels("cube.obj")
-	suzanne:AddModels("DamagedHelmet.gltf")
-	house:AddModels("house.obj")
-	terrain:AddModels("plane.obj")
+	suzanne:AddModels("models/DamagedHelmet.gltf")
+	house:AddModels("models/house.obj")
+	terrain:AddModels("models/plane.obj")
 	
 	-- Cube Texture Setup
-	cube:GetModel(0):SetTexture("diffuse.dds")
-	cube:GetModel(0):SetNormalMap("normals.dds")
-	cube:GetModel(0):SetSpecularMap("specular.dds")
+	cube:GetModel(0):SetTexture("models/diffuse.dds")
+	cube:GetModel(0):SetNormalMap("models/normals.dds")
+	cube:GetModel(0):SetSpecularMap("models/specular.dds")
 
-	house:GetModel(0):SetTexture("house.dds")
-	terrain:GetModel(0):SetTexture("dirtDiffuse.dds")
+	house:GetModel(0):SetTexture("models/house.dds")
+	terrain:GetModel(0):SetTexture("models/dirtDiffuse.dds")
 	
 	suzanne:SetPosition(-3,2,0)
 	suzanne:SetRotation(0,35,0)

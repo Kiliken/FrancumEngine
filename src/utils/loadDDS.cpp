@@ -29,11 +29,34 @@ GLuint Utils::loadDDS(const char *imagepath)
     unsigned int linearSize = *(unsigned int *)&(header[16]);
     unsigned int mipMapCount = *(unsigned int *)&(header[24]);
     unsigned int fourCC = *(unsigned int *)&(header[80]);
+    unsigned int blockSize = 0;
+    unsigned int offset = 0;
+
+    if (mipMapCount == 0)
+        mipMapCount = 1;
 
     unsigned char *buffer;
     unsigned int bufsize;
     /* how big is it going to be including all mipmaps? */
-    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+    if (fourCC == FOURCC_DX10)
+    {
+        bufsize = 20;
+        unsigned int w = width;
+        unsigned int h = height;
+        for (unsigned int level = 0; level < mipMapCount; ++level)
+        {
+            bufsize += w * h * 4;
+            w /= 2;
+            h /= 2;
+            if (w < 1) w = 1;
+            if (h < 1) h = 1;
+        }
+    }
+    else
+    {
+        bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+    }
+
     buffer = (unsigned char *)malloc(bufsize * sizeof(unsigned char));
     fread(buffer, 1, bufsize, fp);
     /* close the file pointer */
@@ -45,15 +68,30 @@ GLuint Utils::loadDDS(const char *imagepath)
     {
     case FOURCC_DXT1:
         format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+        blockSize = 8;
         break;
     case FOURCC_DXT3:
         format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+        blockSize = 16;
         break;
     case FOURCC_DXT5:
         format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        blockSize = 16;
+        break;
+    case FOURCC_DX10:
+        if (*(unsigned int *)buffer != 28)
+        {
+            free(buffer);
+            return 0;
+        }
+
+        format = GL_RGBA;
+
+        offset = 20;
         break;
     default:
         free(buffer);
+        std::cout << "[loadDDS] Unsupported DDS format!" << std::endl;
         return 0;
     }
 
@@ -64,23 +102,31 @@ GLuint Utils::loadDDS(const char *imagepath)
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, textureID);
 
-    unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-    unsigned int offset = 0;
-
     /* load the mipmaps */
     for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
     {
-        unsigned int size = ((width + 3) / 4) * ((height + 3) / 4) * blockSize;
-        glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
-                               0, size, buffer + offset);
+        unsigned int size = 0;
+        if (fourCC == FOURCC_DX10)
+        {
+            size = width * height * 4;
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height,
+                         0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        }
+        else
+        {
+            size = ((width + 3) / 4) * ((height + 3) / 4) * blockSize;
+            glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
+                                   0, size, buffer + offset);
+        }
 
         offset += size;
         width /= 2;
         height /= 2;
 
-        if(width < 1) width = 1;
-		if(height < 1) height = 1;
-        
+        if (width < 1)
+            width = 1;
+        if (height < 1)
+            height = 1;
     }
     free(buffer);
 
@@ -90,13 +136,18 @@ GLuint Utils::loadDDS(const char *imagepath)
     return textureID;
 }
 
-glm::vec3 Utils::hexToVec3(const char* hex) {
-    if (!hex) return glm::vec3(1.0f, 0.0f, 1.0f);
+glm::vec3 Utils::hexToVec3(const char *hex)
+{
+    if (!hex)
+        return glm::vec3(1.0f, 0.0f, 1.0f);
 
     // Skip prefixes
-    if (hex[0] == '#') {
+    if (hex[0] == '#')
+    {
         hex++;
-    } else if ((hex[0] == '0') && (hex[1] == 'x' || hex[1] == 'X')) {
+    }
+    else if ((hex[0] == '0') && (hex[1] == 'x' || hex[1] == 'X'))
+    {
         hex += 2;
     }
 
