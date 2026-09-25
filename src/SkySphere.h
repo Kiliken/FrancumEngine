@@ -17,7 +17,7 @@ class SkySphere
 {
 
 public:
-    SkySphere(glm::mat4* proj, glm::mat4* View);
+    SkySphere();
     ~SkySphere();
 
     void Draw();
@@ -30,6 +30,7 @@ private:
 
     const int X_SEG = 64;
     const int Y_SEG = 64;
+    const float PI = glm::pi<float>();
 
     // Shader Parm
     GLuint shaders;
@@ -38,13 +39,6 @@ private:
     GLuint vertexBuffer;
     GLuint indexBuffer;
 
-    GLuint ProjID;
-    GLuint ViewID;
-
     GLuint Texture;
     GLuint textureID;
-
-    // Transform
-    glm::mat4 *projection;
-    glm::mat4 *view;
 };

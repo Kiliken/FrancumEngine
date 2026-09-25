@@ -54,6 +54,7 @@ struct EngineContext
 
     std::unique_ptr<Inputs> inputs;
     std::unique_ptr<Camera> camera;
+    std::unique_ptr<SkySphere> skybox;
     std::vector<std::unique_ptr<Object>> objects;
 
     // UI Variables
@@ -154,6 +155,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     // Initialize Inputs
     engine->inputs = std::make_unique<Inputs>(engine->window);
+
+    engine->skybox = std::make_unique<SkySphere>();
 
     engine->lua["FEngine"]["Inputs"] = engine->inputs.get();
     engine->lua["FEngine"]["Camera"] = engine->camera.get();
@@ -364,6 +367,8 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &engine->camera->UBOdata);
 
     glUniform3f(engine->lightID, engine->lightPos.x, engine->lightPos.y, engine->lightPos.z);
+
+    engine->skybox->Draw();
 
     engine->cube->Draw();
 

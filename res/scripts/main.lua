@@ -32,6 +32,7 @@ function OnStart()
 
 	house:GetModel(0):SetTexture("models/house.dds")
 	terrain:GetModel(0):SetTexture("models/dirtDiffuse.dds")
+	terrain:GetModel(0):SetNormalMap("models/dirtNormal.dds")
 	
 	suzanne:SetPosition(-3,2,0)
 	suzanne:SetRotation(0,35,0)
