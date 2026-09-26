@@ -22,6 +22,7 @@
 #include "Model.h"
 #include "utils/loadOBJ.h"
 #include "Object.h"
+#include "DirectionalLight.h"
 #include "SkySphere.h"
 #include "ScriptComponent.h"
 
@@ -54,21 +55,19 @@ struct EngineContext
 
     std::unique_ptr<Inputs> inputs;
     std::unique_ptr<Camera> camera;
+    std::unique_ptr<DirectionalLight> light;
     std::unique_ptr<SkySphere> skybox;
     std::vector<std::unique_ptr<Object>> objects;
 
     // UI Variables
     int winWidth, winHeight;
     ImVec4 clear_color;
-    glm::vec3 lightPos;
     glm::vec3 cubePos;
     glm::vec3 cubeRot;
     float cubeScale;
 
     // Render Variables
-    glm::mat4 View;
     GLuint programID;
-    GLuint lightID;
     Uint64 lastTime = 0;
     Object *cube;
 };
@@ -138,7 +137,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     // UI Variables
     engine->clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    engine->lightPos = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
     engine->cubePos = glm::vec3(0.0f);
     engine->cubeRot = glm::vec3(0.0f);
     engine->cubeScale = 1.f;
@@ -150,12 +148,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->lua["FEngine"] = engine->lua.create_table();
     engine->lua.script("print('[Sol3] Lua Scripting Loaded')");
 
-    // Initialize Camera
+    // Initialize classes
     engine->camera = std::make_unique<Camera>(engine->window);
-
-    // Initialize Inputs
     engine->inputs = std::make_unique<Inputs>(engine->window);
-
+    engine->light = std::make_unique<DirectionalLight>();
     engine->skybox = std::make_unique<SkySphere>();
 
     engine->lua["FEngine"]["Inputs"] = engine->inputs.get();
@@ -187,19 +183,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     glEnable(GL_CULL_FACE);
 
-    // Camera matrix
-    engine->View = glm::lookAt(
-        glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
-        glm::vec3(0, 0, 0), // and looks at the origin
-        glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-    );
-
     // Create and compile our GLSL program from the shaders
     // programID = LoadShaders("../res/shaders/NormalMappingShader.vert", "../res/shaders/NormalMappingShader.frag");
     engine->programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
 
     engine->camera->BindToShader();
-    engine->lightID = glGetUniformLocation(engine->programID, "LightDirection_worldspace");
+    engine->light->BindToShader(engine->programID);
 
     {
         DefaultModelConfig.fileName = "cube.obj";
@@ -264,6 +253,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         deltaTime = 0.1f;
 
     engine->camera->Update(deltaTime);
+    engine->light->Update();
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
@@ -328,7 +318,8 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         ImGui::Begin("Francum Engine");
 
         ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
-        ImGui::DragFloat3("Light Direction", glm::value_ptr(engine->lightPos));
+        ImGui::DragFloat("Light Yaw", &engine->light->yaw);
+        ImGui::DragFloat("Light Pitch", &engine->light->pitch);
 
         ImGui::ColorEdit3("clear color", (float *)&engine->clear_color); // Edit 3 floats representing a colorwd
 
@@ -347,13 +338,6 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     engine->cube->SetRotation(engine->cubeRot.x, engine->cubeRot.y, engine->cubeRot.z);
     engine->cube->SetScale(engine->cubeScale, engine->cubeScale, engine->cubeScale);
 
-    // Camera matrix
-    engine->View = glm::lookAt(
-        engine->camera->position,                             // Camera is here
-        engine->camera->position + engine->camera->direction, // and looks here : at the same position, plus "direction"
-        engine->camera->up                                    // Head is up (set to 0,-1,0 to look upside-down)
-    );
-
     engine->cube->Update(deltaTime);
 
     // LuaScript Update
@@ -366,7 +350,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     glBindBuffer(GL_UNIFORM_BUFFER, engine->camera->UBOID);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &engine->camera->UBOdata);
 
-    glUniform3f(engine->lightID, engine->lightPos.x, engine->lightPos.y, engine->lightPos.z);
+    glUniform3fv(engine->light->glID, 1, glm::value_ptr(engine->light->pos));
 
     engine->skybox->Draw();
 
@@ -409,7 +393,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     ImGui::DestroyContext();
 
     glDeleteProgram(engine->programID);
-    glDeleteBuffers(1, &engine->lightID);
 
     SDL_DestroyWindow(engine->window);
     SDL_GL_DestroyContext(engine->glctx);
