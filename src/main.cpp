@@ -151,8 +151,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     // Initialize classes
     engine->camera = std::make_unique<Camera>(engine->window);
     engine->inputs = std::make_unique<Inputs>(engine->window);
-    engine->light = std::make_unique<DirectionalLight>();
     engine->skybox = std::make_unique<SkySphere>();
+    engine->light = std::make_unique<DirectionalLight>();
 
     engine->lua["FEngine"]["Inputs"] = engine->inputs.get();
     engine->lua["FEngine"]["Camera"] = engine->camera.get();
@@ -188,7 +188,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->programID = Utils::LoadSPIRV(ASSETS("shaders/StandardShader.vert.spv"), ASSETS("shaders/StandardShader.frag.spv"));
 
     engine->camera->BindToShader();
-    engine->light->BindToShader(engine->programID);
+    engine->light->BindToShader();
 
     {
         DefaultModelConfig.fileName = "cube.obj";
@@ -213,9 +213,20 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 {
     EngineContext *engine = static_cast<EngineContext *>(appstate);
 
-    if (engine->camera->showUI)
-    {
+    if (engine->camera->showUI){
         ImGui_ImplSDL3_ProcessEvent(event);
+    }
+
+    if (event->type == SDL_EVENT_WINDOW_RESIZED)
+    {
+        int w, h;
+        SDL_GetWindowSizeInPixels(engine->window, &w, &h);
+        
+        engine->winWidth = w;
+        engine->winHeight = h;
+
+        glViewport(0, 0, engine->winWidth, engine->winHeight); //remember to fix projection in here
+        engine->camera->resizeView();
     }
 
     if (event->type == SDL_EVENT_QUIT)
@@ -231,18 +242,6 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     EngineContext *engine = static_cast<EngineContext *>(appstate);
 
     glClearColor(engine->clear_color.x * engine->clear_color.w, engine->clear_color.y * engine->clear_color.w, engine->clear_color.z * engine->clear_color.w, engine->clear_color.w);
-
-    // Resize Window
-    int w, h;
-    SDL_GetWindowSizeInPixels(engine->window, &w, &h);
-    if (w != engine->winWidth || h != engine->winHeight)
-    {
-        engine->winWidth = w;
-        engine->winHeight = h;
-
-        glViewport(0, 0, engine->winWidth, engine->winHeight);
-        engine->camera->resizeView(engine->winWidth, engine->winHeight);
-    }
 
     // Delta Time
     const Uint64 currentTime = SDL_GetPerformanceCounter();
@@ -350,7 +349,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     glBindBuffer(GL_UNIFORM_BUFFER, engine->camera->UBOID);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBO), &engine->camera->UBOdata);
 
-    glUniform3fv(engine->light->glID, 1, glm::value_ptr(engine->light->pos));
+    glBindBuffer(GL_UNIFORM_BUFFER, engine->light->UBOID);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUBO), &engine->light->UBOdata);
+
+    glUniform3fv(14, 1, glm::value_ptr(engine->light->pos));
 
     engine->skybox->Draw();
 
@@ -373,7 +375,10 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         {
             it = engine->objects.erase(it);
         }
-        else {++it;}
+        else
+        {
+            ++it;
+        }
     }
 
     SDL_GL_SwapWindow(engine->window);

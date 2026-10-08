@@ -68,7 +68,7 @@ public:
 
     void Update(float dt);
     void BindToShader();
-    void resizeView(int w, int h);
+    void resizeView();
     void SetPosition(const float &x, const float &y, const float &z);
     void SetRotation(const float &x, const float &y);
     void SetProjMode(const char *mode);

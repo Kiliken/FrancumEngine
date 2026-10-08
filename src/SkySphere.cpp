@@ -72,6 +72,9 @@ void SkySphere::Draw()
 
     glUseProgram(shaders);
 
+    currentTime = static_cast<float>(SDL_GetTicks()) / 1000.0f;
+
+    glUniform1f(25, currentTime);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, Texture);

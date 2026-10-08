@@ -115,9 +115,9 @@ void Camera::BindToShader()
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOID);
 }
 
-void Camera::resizeView(int w, int h) {
-    winWidth = w;
-    winHeight = h;
+void Camera::resizeView() {
+    SDL_GetWindowSize(win, &winWidth, &winHeight);
+    SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
 }
 
 void Camera::SetPosition(const float &x, const float &y, const float &z)

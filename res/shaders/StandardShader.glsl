@@ -15,15 +15,18 @@ layout(location = 22) out vec3 EyeDirection_cameraspace;
 layout(location = 23) out vec3 LightDirection_tangentspace;
 layout(location = 24) out vec3 EyeDirection_tangentspace;
 
-//layout(location = 10) uniform mat4 P;
-//layout(location = 11) uniform mat4 V;
 layout(location = 12) uniform mat4 M;
-
-layout(location = 14) uniform vec3 LightDirection_worldspace;
 
 layout(std140, binding = 2) uniform Camera {
 	mat4 V;
 	mat4 P;
+};
+
+layout(std140, binding = 3) uniform Light {
+	vec3 light_dir_ws;
+	float light_power;
+	float ambient_light;
+	vec3 light_padding;
 };
 
 
@@ -41,12 +44,12 @@ void VSMain() {
     // Camera-space position
     vec3 vertexPosition_cameraspace = (V * vec4(Position_worldspace, 1.0)).xyz;
 
-    // Eye direction (camera is at origin in camera space)
+    // Eye direction
     EyeDirection_cameraspace = -vertexPosition_cameraspace;
 
     // Convert light direction to camera space
     vec3 LightDirection_cameraspace =
-        mat3(V) * (-LightDirection_worldspace); 
+        mat3(V) * (-light_dir_ws); 
 
     // Build TBN in camera space
     vec3 T = normalize(MV3x3 * vertexTangent_modelspace);
@@ -83,8 +86,12 @@ layout(std140, binding = 1) uniform MaterialIndex {
 	int padding;
 };
 
-float AmbientStrength = 0.2;
-float LightPower = 1.1;
+layout(std140, binding = 3) uniform Light {
+	vec3 light_dir_ws;
+	float light_power;
+	float ambient_light;
+	vec3 light_padding;
+};
 
 
 void PSMain() {
@@ -105,7 +112,7 @@ void PSMain() {
 
     // Half-Lambert
     float NdotL = dot(normal, L);
-    float halfLambert = NdotL * 0.5 + 0.5;   // shifts [-1..1] → [0..1]
+    float halfLambert = NdotL * 0.5 + 0.5;
     halfLambert = clamp(halfLambert, 0.0, 1.0);
 
     // Specular
@@ -113,12 +120,12 @@ void PSMain() {
     float spec = pow(max(dot(E, R), 0.0), 16.0);
 
     // Ambient
-    vec3 ambient = AmbientStrength * albedo;
+    vec3 ambient = ambient_light * albedo;
 
     // Color
     color = ambient +
-            albedo * halfLambert * LightPower +
-            specMap * spec * LightPower;
+            albedo * halfLambert * light_power +
+            specMap * spec * light_power;
 
     // Gamma Correction
     color = pow(color, vec3(1.0 / 2.2));

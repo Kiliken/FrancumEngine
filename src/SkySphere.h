@@ -32,6 +32,8 @@ private:
     const int Y_SEG = 64;
     const float PI = glm::pi<float>();
 
+    float currentTime = 0.f;
+
     // Shader Parm
     GLuint shaders;
 

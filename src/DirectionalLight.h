@@ -13,19 +13,32 @@
 #include "Inputs.h"
 #include "utils/vboIndexer.h"
 
+struct LightUBO
+{
+    glm::vec3 dir;
+    float power;
+    float ambient;
+    float padding[3];
+};
+
 class DirectionalLight
 {
 public:
     DirectionalLight();
     ~DirectionalLight();
 
-    void BindToShader(const GLuint& shader);
+    void BindToShader();
     void Update();
 
     float yaw;   // Rotation around Y-axis
     float pitch;  // Tilt down towards scene
     glm::vec3 pos;
-    GLuint glID;
+    
+    float power;
+    float ambient;
+
+    GLuint UBOID;
+    LightUBO UBOdata;
 
 private:
     
