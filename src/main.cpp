@@ -39,7 +39,7 @@ uint64_t menuFlags = 0;
 /*
 Flags:
     1 - Fast Reload
-
+    2 - Pause State
 */
 
 ModelConfig DefaultModelConfig;
@@ -213,7 +213,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 {
     EngineContext *engine = static_cast<EngineContext *>(appstate);
 
-    if (engine->camera->showUI){
+    if (engine->camera->showUI)
+    {
         ImGui_ImplSDL3_ProcessEvent(event);
     }
 
@@ -221,11 +222,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
     {
         int w, h;
         SDL_GetWindowSizeInPixels(engine->window, &w, &h);
-        
+
         engine->winWidth = w;
         engine->winHeight = h;
 
-        glViewport(0, 0, engine->winWidth, engine->winHeight); //remember to fix projection in here
+        glViewport(0, 0, engine->winWidth, engine->winHeight); // remember to fix projection in here
         engine->camera->resizeView();
     }
 
@@ -274,13 +275,38 @@ SDL_AppResult SDL_AppIterate(void *appstate)
                 e.type = SDL_EVENT_QUIT;
                 SDL_PushEvent(&e);
             }
+            if (ImGui::MenuItem("Pause", "F6")) // Pause Engine
+            {
+                menuFlags ^= (1ULL << 2); // Pause State Flag to 1
+            }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Create"))
+            if (ImGui::MenuItem("Assets"))
             {
+                std::string absolutePath = std::filesystem::absolute(ASSETS("")).string();
+                std::string command = "start \"\" explorer \"" + absolutePath + "\"";
+                std::system(command.c_str());
+            }
+            if (ImGui::MenuItem("Scripts"))
+            {
+                std::string absolutePath = std::filesystem::absolute(ASSETS("scripts")).string();
+                std::string command = "start \"\" explorer \"" + absolutePath + "\"";
+                std::system(command.c_str());
+            }
+            if (ImGui::MenuItem("Shaders"))
+            {
+                std::string absolutePath = std::filesystem::absolute(ASSETS("shaders")).string();
+                std::string command = "start \"\" explorer \"" + absolutePath + "\"";
+                std::system(command.c_str());
+            }
+            if (ImGui::MenuItem("Models"))
+            {
+                std::string absolutePath = std::filesystem::absolute(ASSETS("models")).string();
+                std::string command = "start \"\" explorer \"" + absolutePath + "\"";
+                std::system(command.c_str());
             }
             ImGui::EndMenu();
         }
@@ -340,8 +366,11 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     engine->cube->Update(deltaTime);
 
     // LuaScript Update
-    for (auto &script : engine->loadedScripts)
-        script->Update(deltaTime);
+    if ((menuFlags & (1ULL << 2)) == 0)
+    {
+        for (auto &script : engine->loadedScripts)
+            script->Update(deltaTime);
+    }
 
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -354,7 +383,8 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     glUniform3fv(14, 1, glm::value_ptr(engine->light->pos));
 
-    engine->skybox->Draw();
+    if (engine->camera->isPerspective)
+        engine->skybox->Draw();
 
     engine->cube->Draw();
 

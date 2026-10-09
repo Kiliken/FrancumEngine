@@ -7,6 +7,10 @@ Camera::Camera(SDL_Window *mainWindow)
 
     SDL_GetWindowSize(win, &winWidth, &winHeight);
     SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
+
+    projection = glm::perspective(glm::radians(60.0f), (float)winWidth / (float)winHeight, 0.1f, 100.0f);
+    perspectiveProj = projection;
+    orthographicProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.0f, 100.0f);
 }
 
 Camera::~Camera()
@@ -23,11 +27,14 @@ void Camera::Update(float dt)
         SDL_HideCursor();
         SDL_SetWindowRelativeMouseMode(win, true);
 
+        float centerX = winWidth * 0.5f;
+        float centerY = winHeight * 0.5f;
+
         Uint32 mouseInputs = SDL_GetMouseState(&xpos, &ypos);
         SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
 
-        horizontalAngle += mouseSpeed * dt * float(winWidth / 2 - xpos);
-        verticalAngle += mouseSpeed * dt * float(winHeight / 2 - ypos);
+        horizontalAngle += mouseSpeed * dt * (centerX - xpos);
+        verticalAngle += mouseSpeed * dt * (centerY - ypos);
 
         // Clamp camera vertically to prevent flips
         if (verticalAngle > 1.55f)  verticalAngle = 1.55f;
@@ -103,6 +110,8 @@ void Camera::Update(float dt)
         up                    // Head is up (set to 0,-1,0 to look upside-down)
     );
 
+    projection = (isPerspective ? perspectiveProj : orthographicProj);
+
     UBOdata.P = projection;
     UBOdata.V = view;
 }
@@ -118,6 +127,9 @@ void Camera::BindToShader()
 void Camera::resizeView() {
     SDL_GetWindowSize(win, &winWidth, &winHeight);
     SDL_WarpMouseInWindow(win, winWidth / 2.0f, winHeight / 2.0f);
+
+    perspectiveProj = glm::perspective(glm::radians(60.0f), (float)winWidth / (float)winHeight, 0.1f, 100.0f);;
+    orthographicProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.0f, 100.0f);
 }
 
 void Camera::SetPosition(const float &x, const float &y, const float &z)
@@ -133,7 +145,7 @@ void Camera::SetRotation(const float &x, const float &y)
 
 void Camera::SetProjMode(const char *mode){
     if(std::strcmp(mode, "PERSP") == 0)
-        projection = glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+        isPerspective = true;
     else if(std::strcmp(mode, "ORTHO") == 0)
-        projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.0f, 100.0f);
+        isPerspective = false;
 }

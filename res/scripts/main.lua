@@ -4,6 +4,7 @@ house = nil
 terrain = nil
 rotationY = 0
 time = 0
+isOrtho = false
 
 cubePosX = 0
 
@@ -66,6 +67,14 @@ function OnUpdate(dt)
     if FEngine.Inputs:IsKeyDown(INPUT_KEY_RIGHT) then
 		cubePosX = cubePosX - 15 * dt
 	end
+	
+	local isGDown = FEngine.Inputs:IsKeyDown(INPUT_KEY_G)
+    if isGDown and not wasGKeyPressed then
+        isOrtho = not isOrtho
+        FEngine.Camera:SetProjMode(isOrtho and "ORTHO" or "PERSP")
+        print("Camera Switch")
+    end
+    wasGKeyPressed = isGDown
 
     -- apply transforms
     cube:SetPosition(cubePosX, offsetY, 0)
