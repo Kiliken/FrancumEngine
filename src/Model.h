@@ -75,6 +75,8 @@ public:
 private:
     // Render
 
+    bool isLoaded = false;
+
     std::vector<Vertex> vertices;
 
     std::vector<glm::vec3> positions;
@@ -89,12 +91,6 @@ private:
     GLuint vao;
     GLuint vbo;
     GLuint elementbuffer;
-    GLuint vertexbuffer;
-    GLuint uvsbuffer;
-    GLuint normalbuffer;
-    GLuint tangentbuffer;
-    GLuint bitangentbuffer;
-
   
     GLuint ModelMatrixID;
     GLuint ColorID;

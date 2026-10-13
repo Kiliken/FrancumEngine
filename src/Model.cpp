@@ -92,11 +92,9 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
 
     glGenBuffers(1, &MaterialUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, MaterialUBO);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialIDs), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialIDs), &mat, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, MaterialUBO);
-
-    //MatrixID = glGetUniformLocation(*shaders, "P");
-    //viewId = glGetUniformLocation(*shaders, "V");
+    
     ModelMatrixID = glGetUniformLocation(*shaders, "M");
     ColorID = glGetUniformLocation(*shaders, "AlbedoColor");
 
@@ -104,6 +102,8 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
 
     transform = glm::mat4(1.0f);
     color = glm::vec3(1.0f);
+
+    isLoaded = true;
 }
 
 Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::vec2> &inUvs, const std::vector<glm::vec3> &inNormals, const std::vector<unsigned int> inIndices)
@@ -118,12 +118,17 @@ Model::Model(const std::vector<glm::vec3> &inPositions, const std::vector<glm::v
 
 void Model::Update(float deltaTime, const glm::mat4 &trans)
 {
+    if (!isLoaded)
+        return;
 
     transform = trans;
 }
 
 void Model::Draw()
 {
+
+    if (!isLoaded)
+        return;
 
     glUseProgram(*shaders);
 
@@ -132,8 +137,7 @@ void Model::Draw()
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &transform[0][0]);
     glUniform3f(ColorID, color.x, color.y, color.z);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, MaterialUBO);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialIDs), &mat);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, MaterialUBO);
 
     glUniform1i(TexturesID, 0);
 
@@ -148,6 +152,8 @@ void Model::Draw()
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
+
+    glUseProgram(0);
 }
 
 Model::~Model()
@@ -156,15 +162,8 @@ Model::~Model()
 
 void Model::Destroy()
 {
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &uvsbuffer);
-    glDeleteBuffers(1, &normalbuffer);
-    glDeleteBuffers(1, &uvsbuffer);
-    glDeleteBuffers(1, &normalbuffer);
-    glDeleteBuffers(1, &tangentbuffer);
-    glDeleteBuffers(1, &bitangentbuffer);
     glDeleteBuffers(1, &elementbuffer);
-    glDeleteBuffers(1, &vao);
+    glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &MaterialUBO);
     glDeleteTextures(1, &DiffuseTexture);
     glDeleteTextures(1, &NormalTexture);
@@ -176,6 +175,10 @@ void Model::SetTexture(const char *path)
     char fullPath[512];
     snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
 
+    if (DiffuseTexture != 0)
+    {
+        glDeleteTextures(1, &DiffuseTexture);
+    }
     DiffuseTexture = Utils::loadDDS(fullPath);
 }
 
@@ -184,6 +187,10 @@ void Model::SetNormalMap(const char *path)
     char fullPath[512];
     snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
 
+    if (NormalTexture != 0)
+    {
+        glDeleteTextures(1, &NormalTexture);
+    }
     NormalTexture = Utils::loadDDS(fullPath);
 }
 
@@ -192,9 +199,14 @@ void Model::SetSpecularMap(const char *path)
     char fullPath[512];
     snprintf(fullPath, sizeof(fullPath), ASSETS("%s"), path);
 
+    if (SpecularTexture != 0)
+    {
+        glDeleteTextures(1, &SpecularTexture);
+    }
     SpecularTexture = Utils::loadDDS(fullPath);
 }
 
-void Model::SetColor(const char *colorHex){
+void Model::SetColor(const char *colorHex)
+{
     color = Utils::hexToVec3(colorHex);
 }

@@ -38,7 +38,8 @@ bool Object::AddModels(const char *path)
 
 void Object::Update(float deltaTime)
 {
-    if(!updateTransform) return;
+    if (!updateTransform)
+        return;
 
     transform = glm::mat4(1.0f);
     transform = glm::translate(transform, localPos);
@@ -97,4 +98,10 @@ void Object::SetScale(const float &x, const float &y, const float &z)
 Model *Object::GetModel(int index)
 {
     return models[index];
+}
+
+Object *Object::CreateObject(std::vector<std::unique_ptr<Object>>& list)
+{
+    list.push_back(std::make_unique<Object>());
+    return list.back().get();
 }

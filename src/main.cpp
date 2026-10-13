@@ -142,7 +142,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->cubeScale = 1.f;
 
     // Initiate Lua Scripting
-    engine->lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit);
+    engine->lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit,sol::lib::bit32,sol::lib::os,sol::lib::coroutine,sol::lib::count,sol::lib::ffi,sol::lib::debug,sol::lib::utf8);
+    engine->lua.set_panic(&ScriptComponent::OnCrash);
     ScriptComponent::BindFunctions(engine->lua);
     ScriptComponent::SetupConstants(engine->lua);
     engine->lua["FEngine"] = engine->lua.create_table();
@@ -158,8 +159,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->lua["FEngine"]["Camera"] = engine->camera.get();
     engine->lua["FEngine"]["NewObject"] = [engine]()
     {
-        engine->objects.push_back(std::make_unique<Object>());
-        return engine->objects.back().get();
+        return Object::CreateObject(engine->objects);
     };
 
     // Load Scripts
@@ -202,8 +202,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->lastTime = SDL_GetPerformanceCounter();
 
     // LuaScript Start
-    for (auto &script : engine->loadedScripts)
-        script->Start();
+    try
+    {
+        for (auto &script : engine->loadedScripts)
+            script->Start();
+    }
+    catch (const sol::error &e)
+    {
+        std::cerr << "[Script Error] " << e.what() << std::endl;
+    }
 
     return SDL_APP_CONTINUE;
 }
@@ -243,6 +250,21 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     EngineContext *engine = static_cast<EngineContext *>(appstate);
 
     glClearColor(engine->clear_color.x * engine->clear_color.w, engine->clear_color.y * engine->clear_color.w, engine->clear_color.z * engine->clear_color.w, engine->clear_color.w);
+
+    auto it = engine->objects.begin();
+    while (it != engine->objects.end())
+    {
+        Object *obj = it->get();
+
+        if (obj->toDelete)
+        {
+            it = engine->objects.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
 
     // Delta Time
     const Uint64 currentTime = SDL_GetPerformanceCounter();
@@ -357,6 +379,16 @@ SDL_AppResult SDL_AppIterate(void *appstate)
                            10.0f,              // Maximum value (v_max)
                            "%.1f");            // Display format (e.g., one decimal place)
         ImGui::End();
+
+        try
+        {
+            for (auto &script : engine->loadedScripts)
+                script->GUI();
+        }
+        catch (const sol::error &e)
+        {
+            std::cerr << "[Script Error] " << e.what() << std::endl;
+        }
     }
 
     engine->cube->SetPosition(engine->cubePos.x, engine->cubePos.y, engine->cubePos.z);
@@ -368,8 +400,15 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     // LuaScript Update
     if ((menuFlags & (1ULL << 2)) == 0)
     {
-        for (auto &script : engine->loadedScripts)
-            script->Update(deltaTime);
+        try
+        {
+            for (auto &script : engine->loadedScripts)
+                script->Update(deltaTime);
+        }
+        catch (const sol::error &e)
+        {
+            std::cerr << "[Script Error] " << e.what() << std::endl;
+        }
     }
 
     /* Render here */
@@ -396,21 +435,6 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    auto it = engine->objects.begin();
-    while (it != engine->objects.end())
-    {
-        Object *obj = it->get();
-
-        if (obj->toDelete)
-        {
-            it = engine->objects.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-
     SDL_GL_SwapWindow(engine->window);
 
     return SDL_APP_CONTINUE;
@@ -428,6 +452,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     ImGui::DestroyContext();
 
     glDeleteProgram(engine->programID);
+    delete engine->cube;
 
     SDL_DestroyWindow(engine->window);
     SDL_GL_DestroyContext(engine->glctx);

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
+#include <memory>
 #include <glad/gl.h>
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
@@ -27,6 +29,8 @@ public:
     void Update(float deltaTime);
     void Draw();
     void Destroy();
+
+    static Object* CreateObject(std::vector<std::unique_ptr<Object>>& list);
 
     void Transform(const glm::mat4 &transform);
     void SetPosition(const float &x, const float &y, const float &z);

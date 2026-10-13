@@ -87,6 +87,8 @@ void SkySphere::Draw()
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
+    glUseProgram(0);
+
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
 }

@@ -48,8 +48,10 @@ GLuint Utils::loadDDS(const char *imagepath)
             bufsize += w * h * 4;
             w /= 2;
             h /= 2;
-            if (w < 1) w = 1;
-            if (h < 1) h = 1;
+            if (w < 1)
+                w = 1;
+            if (h < 1)
+                h = 1;
         }
     }
     else
@@ -131,7 +133,15 @@ GLuint Utils::loadDDS(const char *imagepath)
     free(buffer);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    if (mipMapCount > 1)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    }
+    else
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    }
 
     return textureID;
 }
