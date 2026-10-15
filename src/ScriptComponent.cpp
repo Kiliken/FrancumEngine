@@ -86,9 +86,9 @@ std::vector<std::string> ScriptComponent::GetScriptsInFolder(const std::string &
     return scripts;
 }
 
-int ScriptComponent::OnCrash(lua_State* L)
+int ScriptComponent::OnCrash(lua_State *L)
 {
-    const char* msg = lua_tostring(L, -1);
+    const char *msg = lua_tostring(L, -1);
     std::cerr << "\n========================================\n";
     std::cerr << "[FATAL SCRIPT PANIC]: ";
     if (msg)
@@ -104,27 +104,71 @@ int ScriptComponent::OnCrash(lua_State* L)
     return 0; // Return 0 to prevent immediate raw abort if possible, letting C++ handle it safely
 }
 
+void ScriptComponent::BindObjectManager(sol::state &lua, ObjectManager *manager)
+{
+    sol::table objectTable = lua["FEngine"]["Object"].get_or_create<sol::table>();
+
+    objectTable["NewObject"] = [manager]() -> uint32_t
+    {
+        return manager ? manager->CreateObject() : 0;
+    };
+
+    objectTable["Update"] = [manager](uint32_t id, float dt)
+    {
+        if (manager)
+            manager->Update(id, dt);
+    };
+
+    objectTable["Draw"] = [manager](uint32_t id)
+    {
+        if (manager)
+            manager->Draw(id);
+    };
+
+    objectTable["Destroy"] = [manager](uint32_t id)
+    {
+        if (manager)
+            manager->DestroyObject(id);
+    };
+
+    objectTable["AddModels"] = [manager](uint32_t id, const char *path) -> bool
+    {
+        return manager ? manager->AddModels(id, path) : false;
+    };
+
+    objectTable["GetModel"] = [manager](uint32_t id, int index) -> Model *
+    {
+        return manager ? manager->GetModel(id, index) : nullptr;
+    };
+
+    objectTable["SetPosition"] = [manager](uint32_t id, float x, float y, float z)
+    {
+        if (manager)
+            manager->SetPosition(id, x, y, z);
+    };
+
+    objectTable["SetRotation"] = [manager](uint32_t id, float x, float y, float z)
+    {
+        if (manager)
+            manager->SetRotation(id, x, y, z);
+    };
+
+    objectTable["SetScale"] = [manager](uint32_t id, float x, float y, float z)
+    {
+        if (manager)
+            manager->SetScale(id, x, y, z);
+    };
+
+    lua.script(R"(
+        local number_meta = debug.getmetatable(0) or {}
+        number_meta.__index = FEngine.Object
+        debug.setmetatable(0, number_meta)
+        )");
+}
+
 void ScriptComponent::BindFunctions(sol::state &lua)
 {
-    lua.new_usertype<Object>("Object",
-                            sol::no_constructor,
-                            sol::meta_function::garbage_collect, [](Object* obj) {},
-                             "Update", &Object::Update,
-                             "Draw", &Object::Draw,
-                             "Destroy", &Object::Destroy,
-                             "AddModels", &Object::AddModels,
-                             "GetModel", &Object::GetModel,
-                             "SetPosition", &Object::SetPosition,
-                             "SetRotation", &Object::SetRotation,
-                             "SetScale", &Object::SetScale);
-
-    lua.new_usertype<Model>("Model",
-                            sol::no_constructor,
-                            sol::meta_function::garbage_collect, [](Model* model) {},
-                            "SetTexture", &Model::SetTexture,
-                            "SetNormalMap", &Model::SetNormalMap,
-                            "SetSpecularMap", &Model::SetSpecularMap,
-                            "SetColor", &Model::SetColor);
+    lua.new_usertype<Model>("Model", sol::no_constructor, sol::meta_function::garbage_collect, [](Model *model) {}, "SetTexture", &Model::SetTexture, "SetNormalMap", &Model::SetNormalMap, "SetSpecularMap", &Model::SetSpecularMap, "SetColor", &Model::SetColor);
 
     lua.new_usertype<Inputs>("Inputs", "IsKeyDown", &Inputs::IsKeyDown);
 

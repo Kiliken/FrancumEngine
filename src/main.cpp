@@ -21,7 +21,7 @@
 #include "utils/vboIndexer.h"
 #include "Model.h"
 #include "utils/loadOBJ.h"
-#include "Object.h"
+#include "ObjectManager.h"
 #include "DirectionalLight.h"
 #include "SkySphere.h"
 #include "ScriptComponent.h"
@@ -55,9 +55,9 @@ struct EngineContext
 
     std::unique_ptr<Inputs> inputs;
     std::unique_ptr<Camera> camera;
+    std::unique_ptr<ObjectManager> objManager;
     std::unique_ptr<DirectionalLight> light;
     std::unique_ptr<SkySphere> skybox;
-    std::vector<std::unique_ptr<Object>> objects;
 
     // UI Variables
     int winWidth, winHeight;
@@ -69,7 +69,6 @@ struct EngineContext
     // Render Variables
     GLuint programID;
     Uint64 lastTime = 0;
-    Object *cube;
 };
 
 /* This function runs once at startup. */
@@ -141,26 +140,24 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     engine->cubeRot = glm::vec3(0.0f);
     engine->cubeScale = 1.f;
 
+    // Initialize classes
+    engine->camera = std::make_unique<Camera>(engine->window);
+    engine->inputs = std::make_unique<Inputs>(engine->window);
+    engine->objManager = std::make_unique<ObjectManager>();
+    engine->skybox = std::make_unique<SkySphere>();
+    engine->light = std::make_unique<DirectionalLight>();
+
     // Initiate Lua Scripting
-    engine->lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit,sol::lib::bit32,sol::lib::os,sol::lib::coroutine,sol::lib::count,sol::lib::ffi,sol::lib::debug,sol::lib::utf8);
+    engine->lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::string, sol::lib::io, sol::lib::os, sol::lib::jit, sol::lib::bit32, sol::lib::os, sol::lib::coroutine, sol::lib::count, sol::lib::ffi, sol::lib::debug, sol::lib::utf8);
     engine->lua.set_panic(&ScriptComponent::OnCrash);
     ScriptComponent::BindFunctions(engine->lua);
     ScriptComponent::SetupConstants(engine->lua);
     engine->lua["FEngine"] = engine->lua.create_table();
     engine->lua.script("print('[Sol3] Lua Scripting Loaded')");
 
-    // Initialize classes
-    engine->camera = std::make_unique<Camera>(engine->window);
-    engine->inputs = std::make_unique<Inputs>(engine->window);
-    engine->skybox = std::make_unique<SkySphere>();
-    engine->light = std::make_unique<DirectionalLight>();
-
     engine->lua["FEngine"]["Inputs"] = engine->inputs.get();
     engine->lua["FEngine"]["Camera"] = engine->camera.get();
-    engine->lua["FEngine"]["NewObject"] = [engine]()
-    {
-        return Object::CreateObject(engine->objects);
-    };
+    ScriptComponent::BindObjectManager(engine->lua, engine->objManager.get());
 
     // Load Scripts
     {
@@ -195,9 +192,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         DefaultModelConfig.prog = &engine->programID;
     }
 
-    engine->cube = new Object;
+    engine->objManager->CreateObject();
 
-    engine->cube->AddModels("cube.obj");
+    engine->objManager->AddModels(1, "cube.obj");
 
     engine->lastTime = SDL_GetPerformanceCounter();
 
@@ -251,20 +248,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     glClearColor(engine->clear_color.x * engine->clear_color.w, engine->clear_color.y * engine->clear_color.w, engine->clear_color.z * engine->clear_color.w, engine->clear_color.w);
 
-    auto it = engine->objects.begin();
-    while (it != engine->objects.end())
-    {
-        Object *obj = it->get();
-
-        if (obj->toDelete)
-        {
-            it = engine->objects.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
+    engine->objManager->Cleanup();
 
     // Delta Time
     const Uint64 currentTime = SDL_GetPerformanceCounter();
@@ -391,11 +375,11 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         }
     }
 
-    engine->cube->SetPosition(engine->cubePos.x, engine->cubePos.y, engine->cubePos.z);
-    engine->cube->SetRotation(engine->cubeRot.x, engine->cubeRot.y, engine->cubeRot.z);
-    engine->cube->SetScale(engine->cubeScale, engine->cubeScale, engine->cubeScale);
+    engine->objManager->SetPosition(1, engine->cubePos.x, engine->cubePos.y, engine->cubePos.z);
+    engine->objManager->SetRotation(1, engine->cubeRot.x, engine->cubeRot.y, engine->cubeRot.z);
+    engine->objManager->SetScale(1, engine->cubeScale, engine->cubeScale, engine->cubeScale);
 
-    engine->cube->Update(deltaTime);
+    engine->objManager->Update(1, deltaTime);
 
     // LuaScript Update
     if ((menuFlags & (1ULL << 2)) == 0)
@@ -425,11 +409,18 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     if (engine->camera->isPerspective)
         engine->skybox->Draw();
 
-    engine->cube->Draw();
+    engine->objManager->Draw(1);
 
     // LuaScript Draw
-    for (auto &script : engine->loadedScripts)
-        script->Draw();
+    try
+    {
+        for (auto &script : engine->loadedScripts)
+            script->Draw();
+    }
+    catch (const sol::error &e)
+    {
+        std::cerr << "[Script Error] " << e.what() << std::endl;
+    }
 
     // Rendering
     ImGui::Render();
@@ -452,7 +443,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
     ImGui::DestroyContext();
 
     glDeleteProgram(engine->programID);
-    delete engine->cube;
 
     SDL_DestroyWindow(engine->window);
     SDL_GL_DestroyContext(engine->glctx);

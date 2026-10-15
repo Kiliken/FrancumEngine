@@ -99,9 +99,3 @@ Model *Object::GetModel(int index)
 {
     return models[index];
 }
-
-Object *Object::CreateObject(std::vector<std::unique_ptr<Object>>& list)
-{
-    list.push_back(std::make_unique<Object>());
-    return list.back().get();
-}

@@ -6,9 +6,9 @@
 #include <vector>
 #include <string>
 
-#include "Object.h"
-#include "Model.h"
+
 #include "Camera.h"
+#include "ObjectManager.h"
 
 class ScriptComponent
 {
@@ -32,5 +32,6 @@ public:
     static std::vector<std::string> GetScriptsInFolder(const std::string &folderPath);
     static void BindFunctions(sol::state &lua);
     static void SetupConstants(sol::state &lua);
+    static void BindObjectManager(sol::state &lua, ObjectManager* manager);
     static int OnCrash(lua_State* L);
 };
