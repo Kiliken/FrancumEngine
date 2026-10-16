@@ -16,6 +16,6 @@ Copy-Item -Path "$($PSScriptRoot)\common\gccbuild.bat" -Destination "$env:LOCALA
 # Build Lua
 $env:PATH = "$env:LOCALAPPDATA\w64devkit\bin;$env:PATH"
 Set-Location "$env:LOCALAPPDATA\LuaJIT-2.1\src"
-cmd.exe /C gccbuild.bat
+cmd.exe /C gccbuild.bat static
 
 return 0

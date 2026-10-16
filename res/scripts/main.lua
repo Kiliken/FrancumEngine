@@ -1,4 +1,3 @@
-jit.off()
 new_array = require("table.new")
 
 cube = nil
@@ -10,12 +9,9 @@ time = 0
 isOrtho = false
 cubePosX = 0
 
--- Add these at the top of your script with your other variables:
-autoSpawnTimer = 0
-autoSpawnInterval = 2 -- Spawns a new object automatically every 0.5 seconds
-
 -- New variables for dynamic object management
 spawnedObjects = nil
+maxObjects = 100
 wasTKeyPressed = false
 wasOKeyPressed = false
 wasGKeyPressed = false
@@ -23,7 +19,7 @@ wasGKeyPressed = false
 function OnStart()
     print("Script started!")
 	
-	spawnedObjects = new_array(100, 0)
+	spawnedObjects = new_array(maxObjects, 0)
 	
     FEngine.Camera:SetPosition(-1, 5, 7)
     FEngine.Camera:SetRotation(-156, -18)
@@ -91,22 +87,25 @@ function OnUpdate(dt)
     end
     wasGKeyPressed = isGDown
 
--- Automatic Timer Spawner (No keys required)
-    autoSpawnTimer = autoSpawnTimer + dt
-    if autoSpawnTimer >= autoSpawnInterval then
-        autoSpawnTimer = 0 -- Reset the timer
-        
-        local newObj = FEngine.Object.NewObject()
-        newObj:AddModels("models/DamagedHelmet.gltf")
-        
-        -- Give it a random spread position
-        local rx = math.random(-6, 6)
-        local rz = math.random(-6, 6)
-        newObj:SetPosition(rx, 1, rz)
-		
-        table.insert(spawnedObjects, newObj)
-        print("Auto-created object! Total count: " .. #spawnedObjects)
+	-- Deleting an object (T Key)
+	local isTDown = FEngine.Inputs:IsKeyDown(INPUT_KEY_T)
+    if isTDown and not wasTKeyPressed then
+        if #spawnedObjects < (maxObjects - 1) then
+			local newObj = FEngine.Object.NewObject()
+			newObj:AddModels("models/DamagedHelmet.gltf")
+			
+			-- Give it a random spread position
+			local rx = math.random(-12, 12)
+			local rz = math.random(-12, 12)
+			newObj:SetPosition(rx, 1, rz)
+			
+			table.insert(spawnedObjects, newObj)
+			print("Created object! Total count: " .. #spawnedObjects)
+		else
+            print("Too many objects created!")
+        end
     end
+	wasTKeyPressed = isTDown
 
     -- Deleting an object (O Key)
     local isODown = FEngine.Inputs:IsKeyDown(INPUT_KEY_O)
@@ -132,8 +131,6 @@ function OnUpdate(dt)
     suzanne:Update(dt)
     house:Update(dt)
     terrain:Update(dt)
-
-    -- Safe update loop using numeric indexing (bypasses ipairs completely)
     
     for i = 1, #spawnedObjects do
             local obj = spawnedObjects[i]
